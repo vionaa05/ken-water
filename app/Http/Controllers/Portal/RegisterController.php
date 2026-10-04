@@ -29,9 +29,13 @@ class RegisterController extends Controller
             'password' => 'required|string|min:6|confirmed',
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
+            'name.max' => 'Nama lengkap maksimal 100 karakter.',
             'phone.required' => 'Nomor HP/WhatsApp wajib diisi.',
+            'phone.max' => 'Nomor HP maksimal 20 karakter.',
             'phone.unique' => 'Nomor HP sudah terdaftar. Silakan login.',
             'address.required' => 'Alamat wajib diisi.',
+            'address.max' => 'Alamat maksimal 255 karakter.',
+            'birth_date.before' => 'Tanggal lahir harus sebelum hari ini.',
             'password.required' => 'Password wajib diisi.',
             'password.min' => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
@@ -54,9 +58,7 @@ class RegisterController extends Controller
             'registered_at' => $now,
         ]);
 
-        Auth::login($user);
-
-        return redirect()->route('portal.home')
-            ->with('success', 'Selamat datang di Ken Water! Akun Anda berhasil dibuat.');
+        return redirect()->route('login')
+            ->with('success', 'Akun berhasil dibuat. Silakan login untuk melanjutkan.');
     }
 }

@@ -42,19 +42,46 @@ class DatabaseSeeder extends Seeder
         // =====================
         $admin = User::create([
             'name' => 'Admin Ken Water',
-            'email' => 'admin@kenwater.id',
+            'email' => 'admin@kenwater.com',
             'phone' => '081200000001',
             'address' => 'Jl. Depot Utama No. 1',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'status' => 'aktif',
+            'current_period_start' => Carbon::now(),
+            'registered_at' => Carbon::now()->subYears(2),
+        ]);
+
+        // Alias admin dengan domain .id
+        User::create([
+            'name' => 'Admin Ken Water (ID)',
+            'email' => 'admin@kenwater.id',
+            'phone' => '081200000011',
+            'address' => 'Jl. Depot Utama No. 1',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'status' => 'aktif',
+            'current_period_start' => Carbon::now(),
             'registered_at' => Carbon::now()->subYears(2),
         ]);
 
         $staf = User::create([
             'name' => 'Budi Santoso',
-            'email' => 'staf@kenwater.id',
+            'email' => 'staf@kenwater.com',
             'phone' => '081200000002',
+            'address' => 'Jl. Karyawan No. 5',
+            'password' => Hash::make('password'),
+            'role' => 'staf',
+            'status' => 'aktif',
+            'current_period_start' => Carbon::now(),
+            'registered_at' => Carbon::now()->subYear(),
+        ]);
+
+        // Alias staf dengan domain .id
+        User::create([
+            'name' => 'Budi Santoso (ID)',
+            'email' => 'staf@kenwater.id',
+            'phone' => '081200000022',
             'address' => 'Jl. Karyawan No. 5',
             'password' => Hash::make('password'),
             'role' => 'staf',
@@ -71,12 +98,29 @@ class DatabaseSeeder extends Seeder
         $pelanggan1 = User::create([
             'name' => 'Siti Rahayu',
             'email' => null,
-            'phone' => '08123456789',
+            'phone' => '081234567890',
             'address' => 'Jl. Merdeka No. 10, RT 03/RW 02',
             'birth_date' => '1990-10-15',
             'password' => Hash::make('password'),
             'role' => 'pelanggan',
             'customer_id' => 'KW-001',
+            'status' => 'aktif',
+            'loyalty_level' => 'gold',
+            'points' => 180,
+            'current_period_start' => $periodStart,
+            'registered_at' => $periodStart,
+        ]);
+
+        // Alias pelanggan 11 digit
+        User::create([
+            'name' => 'Siti Rahayu (11 Digit)',
+            'email' => null,
+            'phone' => '08123456789',
+            'address' => 'Jl. Merdeka No. 10, RT 03/RW 02',
+            'birth_date' => '1990-10-15',
+            'password' => Hash::make('password'),
+            'role' => 'pelanggan',
+            'customer_id' => 'KW-001B',
             'status' => 'aktif',
             'loyalty_level' => 'gold',
             'points' => 180,

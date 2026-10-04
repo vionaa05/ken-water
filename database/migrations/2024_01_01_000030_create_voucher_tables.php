@@ -16,8 +16,8 @@ return new class extends Migration
             $table->enum('discount_type', ['nominal', 'persen']);
             $table->decimal('discount_value', 10, 2);
             $table->decimal('min_purchase', 10, 2)->nullable();
-            $table->timestamp('valid_from');
-            $table->timestamp('valid_until');
+            $table->date('valid_from');
+            $table->date('valid_until');
             $table->enum('usage_type', ['sekali', 'banyak'])->default('sekali');
             $table->integer('max_usage')->nullable();
             $table->integer('used_count')->default(0);
@@ -43,8 +43,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->enum('discount_type', ['nominal', 'persen']);
             $table->decimal('discount_value', 10, 2);
-            $table->timestamp('valid_from');
-            $table->timestamp('valid_until');
+            $table->date('valid_from');
+            $table->date('valid_until');
             $table->boolean('is_used')->default(false);
             $table->boolean('is_expired')->default(false); // akan di-set true saat reaktivasi
             $table->timestamp('period_start')->nullable();

@@ -12,13 +12,13 @@ class VoucherPortalController extends Controller
         $user = auth()->user();
         
         $vouchers = $user->userVouchers()
-            ->where('period_start', '>=', $user->current_period_start)
+            ->when($user->current_period_start, fn($q, $start) => $q->where('period_start', '>=', $start))
             ->with('voucher')
             ->latest()
             ->get();
             
         $promos = $user->personalPromos()
-            ->where('period_start', '>=', $user->current_period_start)
+            ->when($user->current_period_start, fn($q, $start) => $q->where('period_start', '>=', $start))
             ->latest()
             ->get();
             

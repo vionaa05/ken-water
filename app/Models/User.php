@@ -43,14 +43,18 @@ class User extends Authenticatable
     public function currentPeriodOrders()
     {
         return $this->hasMany(Order::class)
-            ->where('period_start', '>=', $this->current_period_start)
+            ->when($this->current_period_start, function ($q, $start) {
+                $q->where('period_start', '>=', $start);
+            })
             ->where('status', '!=', 'dibatalkan');
     }
 
     public function completedOrders()
     {
         return $this->hasMany(Order::class)
-            ->where('period_start', '>=', $this->current_period_start)
+            ->when($this->current_period_start, function ($q, $start) {
+                $q->where('period_start', '>=', $start);
+            })
             ->where('status', 'selesai');
     }
 

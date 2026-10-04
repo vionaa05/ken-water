@@ -13,8 +13,8 @@ return new class extends Migration
             $table->string('name');
             $table->enum('type', ['promo_baru', 'promo_loyal', 'ulang_tahun', 'ajakan_kembali']);
             $table->json('target_segment')->nullable(); // segmen target: ['baru','reguler', dll]
-            $table->timestamp('period_start');
-            $table->timestamp('period_end');
+            $table->date('period_start');
+            $table->date('period_end');
             $table->text('message_template'); // template pesan WhatsApp
             $table->foreignId('voucher_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('created_by')->constrained('users')->onDelete('cascade');

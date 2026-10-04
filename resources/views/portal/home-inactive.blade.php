@@ -26,7 +26,7 @@
         </ul>
     </div>
 
-    <a href="{{ route('portal.reactivate.show') }}" class="btn-primary w-full max-w-sm py-3 text-lg shadow-lg">
+    <a href="{{ route('portal.reactivate') }}" class="btn-primary w-full max-w-sm py-3 text-lg shadow-lg">
         Reaktivasi Akun Sekarang
     </a>
 </div>

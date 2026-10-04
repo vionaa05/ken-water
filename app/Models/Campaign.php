@@ -15,8 +15,8 @@ class Campaign extends Model
     {
         return [
             'target_segment' => 'array',
-            'period_start' => 'datetime',
-            'period_end' => 'datetime',
+            'period_start' => 'date',
+            'period_end' => 'date',
         ];
     }
 
@@ -32,13 +32,13 @@ class Campaign extends Model
 
     public function getTypeLabelAttribute(): string
     {
-        return match($this->type) {
+        $labels = [
             'promo_baru' => 'Promo Pelanggan Baru',
             'promo_loyal' => 'Promo Pelanggan Loyal',
             'ulang_tahun' => 'Promo Ulang Tahun',
             'ajakan_kembali' => 'Ajakan Kembali',
-            default => ucfirst($this->type),
         ];
+        return $labels[$this->type] ?? ucfirst($this->type);
     }
 
     public function isActive(): bool

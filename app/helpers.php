@@ -24,9 +24,10 @@ if (!function_exists('setting')) {
 }
 
 if (!function_exists('format_rupiah')) {
-    function format_rupiah(float $amount): string
+    function format_rupiah(float|int|string|null $amount = 0): string
     {
-        return 'Rp ' . number_format($amount, 0, ',', '.');
+        $val = is_numeric($amount) ? (float) $amount : 0;
+        return 'Rp ' . number_format($val, 0, ',', '.');
     }
 }
 

@@ -131,7 +131,7 @@ class OrderPortalController extends Controller
         $user = auth()->user();
         
         $orders = $user->orders()
-            ->where('period_start', '>=', $user->current_period_start)
+            ->when($user->current_period_start, fn($q, $start) => $q->where('period_start', '>=', $start))
             ->latest('order_date')
             ->paginate(10);
             
@@ -152,7 +152,7 @@ class OrderPortalController extends Controller
         $user = auth()->user();
         
         $orders = $user->orders()
-            ->where('period_start', '>=', $user->current_period_start)
+            ->when($user->current_period_start, fn($q, $start) => $q->where('period_start', '>=', $start))
             ->where('status', 'selesai')
             ->latest('completed_at')
             ->paginate(15);

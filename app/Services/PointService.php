@@ -128,16 +128,22 @@ class PointService
             return [
                 'current' => $currentPoints,
                 'target' => $silverThreshold,
+                'next_threshold' => $silverThreshold,
                 'needed' => max(0, $silverThreshold - $currentPoints),
+                'points_needed' => max(0, $silverThreshold - $currentPoints),
                 'next_level' => 'Silver',
+                'is_max' => false,
                 'percentage' => min(100, round(($currentPoints / $silverThreshold) * 100)),
             ];
         } elseif ($user->loyalty_level === 'silver') {
             return [
                 'current' => $currentPoints,
                 'target' => $goldThreshold,
+                'next_threshold' => $goldThreshold,
                 'needed' => max(0, $goldThreshold - $currentPoints),
+                'points_needed' => max(0, $goldThreshold - $currentPoints),
                 'next_level' => 'Gold',
+                'is_max' => false,
                 'percentage' => min(100, round((($currentPoints - $silverThreshold) / ($goldThreshold - $silverThreshold)) * 100)),
             ];
         }
@@ -145,8 +151,11 @@ class PointService
         return [
             'current' => $currentPoints,
             'target' => $goldThreshold,
+            'next_threshold' => $goldThreshold,
             'needed' => 0,
-            'next_level' => 'Gold (Maksimum)',
+            'points_needed' => 0,
+            'next_level' => null,
+            'is_max' => true,
             'percentage' => 100,
         ];
     }

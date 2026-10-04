@@ -24,7 +24,7 @@ class RewardPortalController extends Controller
             ->get();
             
         $redemptions = $user->rewardRedemptions()
-            ->where('period_start', '>=', $user->current_period_start)
+            ->when($user->current_period_start, fn($q, $start) => $q->where('period_start', '>=', $start))
             ->with('reward')
             ->latest()
             ->get();

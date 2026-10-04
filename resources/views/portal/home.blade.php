@@ -86,8 +86,8 @@
         <span class="text-xs font-semibold text-primary">{{ $user->points }} Poin Terkumpul</span>
     </div>
     
-    @if($progress['next_level'])
-        <p class="text-xs text-gray-500 mb-4">Butuh <span class="font-bold text-gray-700">{{ $progress['points_needed'] }} poin</span> lagi untuk naik ke level <span class="font-bold capitalize {{ $progress['next_level'] === 'silver' ? 'text-gray-500' : 'text-yellow-600' }}">{{ $progress['next_level'] }}</span>.</p>
+    @if(!$progress['is_max'] && !empty($progress['next_level']))
+        <p class="text-xs text-gray-500 mb-4">Butuh <span class="font-bold text-gray-700">{{ $progress['points_needed'] }} poin</span> lagi untuk naik ke level <span class="font-bold capitalize {{ strtolower($progress['next_level']) === 'silver' ? 'text-gray-500' : 'text-yellow-600' }}">{{ $progress['next_level'] }}</span>.</p>
         
         <div class="w-full bg-gray-200 rounded-full h-3 mb-1 overflow-hidden">
             <div class="bg-primary h-3 rounded-full transition-all duration-1000 ease-out relative" style="width: {{ $progress['percentage'] }}%">
@@ -95,8 +95,8 @@
             </div>
         </div>
         <div class="flex justify-between text-[10px] text-gray-400 font-medium">
-            <span>{{ $user->loyalty_level }}</span>
-            <span>{{ $progress['next_level'] }} ({{ $progress['next_threshold'] }})</span>
+            <span>{{ ucfirst($user->loyalty_level) }}</span>
+            <span>{{ $progress['next_level'] }} ({{ $progress['next_threshold'] }} Poin)</span>
         </div>
     @else
         <p class="text-xs text-green-600 mb-4 font-medium">Selamat! Anda sudah mencapai level tertinggi (Gold).</p>
