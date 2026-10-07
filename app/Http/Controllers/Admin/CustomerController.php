@@ -87,7 +87,9 @@ class CustomerController extends Controller
 
         // Riwayat transaksi HANYA periode akun saat ini
         $orders = $customer->orders()
-            ->where('period_start', '>=', $customer->current_period_start)
+            ->when($customer->current_period_start, function ($q, $start) {
+                $q->where('period_start', '>=', $start);
+            })
             ->where('status', '!=', 'dibatalkan')
             ->with('processor')
             ->latest('order_date')

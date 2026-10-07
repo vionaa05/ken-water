@@ -28,7 +28,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         $role = auth()->user()->role;
         return match($role) {
-            'admin', 'staf' => redirect()->route('admin.dashboard'),
+            'admin' => redirect()->route('admin.dashboard'),
             'pelanggan' => redirect()->route('portal.home'),
             default => redirect()->route('login'),
         };
@@ -49,9 +49,9 @@ Route::prefix('portal')->name('portal.')->group(function () {
 });
 
 // =====================
-// BACK OFFICE (Admin & Staf)
+// BACK OFFICE (Admin)
 // =====================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,staf'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -59,6 +59,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,staf'])-
     // Manajemen Pelanggan
     Route::resource('customers', CustomerController::class);
     Route::get('/customers/{customer}/print-card', [CustomerController::class, 'printCard'])->name('customers.print-card');
+    Route::post('/customers/{customer}/store-direct', [CustomerController::class, 'storeDirect'])->name('customers.store-direct');
 
     // Pesanan
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -98,9 +99,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,staf'])-
     // Kampanye CRM
     Route::resource('campaigns', CampaignController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
-    // Pengaturan (khusus Admin)
-    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index')->middleware('role:admin');
-    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update')->middleware('role:admin');
+    // Pengaturan
+    Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
+    Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
     // Notifikasi - mark as read
     Route::get('/notifications/data', function () {
@@ -144,11 +145,12 @@ Route::prefix('portal')->name('portal.')->middleware(['auth', 'role:pelanggan'])
 
     // Keluhan (aktif maupun tidak aktif bisa lihat, tapi hanya aktif yang bisa buat baru)
     Route::get('/complaints', [ComplaintPortalController::class, 'index'])->name('complaints.index');
-    Route::get('/complaints/{complaint}', [ComplaintPortalController::class, 'show'])->name('complaints.show');
+    // PENTING: route 'create' harus didefinisikan SEBELUM '{complaint}' agar tidak tertangkap sebagai parameter
     Route::middleware('customer.active')->group(function () {
         Route::get('/complaints/create', [ComplaintPortalController::class, 'create'])->name('complaints.create');
         Route::post('/complaints', [ComplaintPortalController::class, 'store'])->name('complaints.store');
     });
+    Route::get('/complaints/{complaint}', [ComplaintPortalController::class, 'show'])->name('complaints.show');
 
     // Kartu Member Digital
     Route::get('/member-card', [MemberCardController::class, 'show'])->name('member-card');

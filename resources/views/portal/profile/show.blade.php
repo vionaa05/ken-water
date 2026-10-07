@@ -4,6 +4,11 @@
 
 @section('content')
 <div class="px-4 py-4 space-y-4 max-w-lg mx-auto">
+    <!-- Back Button -->
+    <a href="{{ route('portal.home') }}" class="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-primary gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        Kembali ke Beranda
+    </a>
     <div>
         <h1 class="text-xl font-extrabold text-gray-900">Profil Saya</h1>
         <p class="text-xs text-gray-500">Informasi akun & pengaturan keamanan</p>
@@ -22,13 +27,13 @@
         </div>
         <div>
             <h2 class="font-extrabold text-lg">{{ $user->name }}</h2>
-            <p class="text-xs text-blue-100 font-mono">Kode: {{ $user->customer_code }}</p>
+            <p class="text-xs text-blue-100 font-mono">Kode: {{ $user->customer_id }}</p>
             <div class="mt-1.5 flex items-center gap-2">
                 <span class="text-[10px] font-bold bg-white text-primary px-2.5 py-0.5 rounded-full uppercase">
-                    Level {{ ucfirst($user->loyalty_tier) }}
+                    Level {{ ucfirst($user->loyalty_level) }}
                 </span>
                 <span class="text-[10px] font-bold bg-amber-400 text-gray-900 px-2.5 py-0.5 rounded-full">
-                    {{ number_format($user->points_balance) }} Poin
+                    {{ number_format($user->points) }} Poin
                 </span>
             </div>
         </div>

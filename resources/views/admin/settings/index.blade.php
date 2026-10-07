@@ -10,7 +10,6 @@
     <div class="card p-6">
         <form method="POST" action="{{ route('admin.settings.update') }}" class="space-y-6">
             @csrf
-            @method('PUT')
 
             <div>
                 <h3 class="font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Harga & Poin</h3>

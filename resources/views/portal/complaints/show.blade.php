@@ -51,7 +51,7 @@
             </div>
         @else
             <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
-                ⏳ Keluhan Anda telah diterima dan sedang dalam antrean tindak lanjut oleh staf kami.
+                ⏳ Keluhan Anda telah diterima dan sedang dalam antrean tindak lanjut oleh tim kami.
             </div>
         @endif
     </div>

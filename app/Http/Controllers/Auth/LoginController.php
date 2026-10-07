@@ -57,7 +57,7 @@ class LoginController extends Controller
     private function redirectByRole(string $role)
     {
         return match($role) {
-            'admin', 'staf' => redirect()->route('admin.dashboard'),
+            'admin' => redirect()->route('admin.dashboard'),
             'pelanggan' => redirect()->route('portal.home'),
             default => redirect()->route('login'),
         };

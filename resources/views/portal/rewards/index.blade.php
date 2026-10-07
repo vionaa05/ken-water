@@ -108,7 +108,7 @@
                     <p class="font-mono text-xl font-bold tracking-[0.2em] text-gray-900">{{ $pending->redemption_code }}</p>
                 </div>
                 <p class="text-xs text-gray-600 mt-3 text-center">
-                    Tunjukkan kode ini ke staf depot untuk mengambil hadiah Anda.
+                    Tunjukkan kode ini ke admin depot untuk mengambil hadiah Anda.
                 </p>
             </div>
             @empty

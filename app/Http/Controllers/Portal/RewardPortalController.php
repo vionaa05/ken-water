@@ -76,7 +76,7 @@ class RewardPortalController extends Controller
                 'reference_id' => $redemption->id
             ]);
             
-            return back()->with('success', "Berhasil menukar poin! Tunjukkan kode penukaran {$code} ke staf depot kami.");
+            return back()->with('success', "Berhasil menukar poin! Tunjukkan kode penukaran {$code} ke admin depot kami.");
         }
         
         return back()->with('error', 'Terjadi kesalahan sistem, silakan coba lagi.');

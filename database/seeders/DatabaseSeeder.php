@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
         }
 
         // =====================
-        // 2. ADMIN & STAF
+        // 2. ADMIN
         // =====================
         $admin = User::create([
             'name' => 'Admin Ken Water',
@@ -65,29 +65,7 @@ class DatabaseSeeder extends Seeder
             'registered_at' => Carbon::now()->subYears(2),
         ]);
 
-        $staf = User::create([
-            'name' => 'Budi Santoso',
-            'email' => 'staf@kenwater.com',
-            'phone' => '081200000002',
-            'address' => 'Jl. Karyawan No. 5',
-            'password' => Hash::make('password'),
-            'role' => 'staf',
-            'status' => 'aktif',
-            'current_period_start' => Carbon::now(),
-            'registered_at' => Carbon::now()->subYear(),
-        ]);
-
-        // Alias staf dengan domain .id
-        User::create([
-            'name' => 'Budi Santoso (ID)',
-            'email' => 'staf@kenwater.id',
-            'phone' => '081200000022',
-            'address' => 'Jl. Karyawan No. 5',
-            'password' => Hash::make('password'),
-            'role' => 'staf',
-            'status' => 'aktif',
-            'registered_at' => Carbon::now()->subYear(),
-        ]);
+        $staf = $admin; // Gunakan admin untuk pemrosesan order dan keluhan seeder
 
         // =====================
         // 3. PELANGGAN AKTIF GOLD (banyak transaksi)

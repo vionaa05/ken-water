@@ -11,13 +11,13 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('email')->unique()->nullable(); // untuk admin/staf
+            $table->string('email')->unique()->nullable(); // untuk admin
             $table->string('phone')->unique()->nullable(); // untuk pelanggan (WhatsApp)
             $table->string('address')->nullable();
             $table->date('birth_date')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['admin', 'staf', 'pelanggan'])->default('pelanggan');
+            $table->enum('role', ['admin', 'pelanggan'])->default('pelanggan');
             $table->string('customer_id', 20)->unique()->nullable(); // KW-XXXXXX
             $table->enum('status', ['aktif', 'tidak_aktif'])->default('aktif');
             $table->enum('loyalty_level', ['bronze', 'silver', 'gold'])->default('bronze');
