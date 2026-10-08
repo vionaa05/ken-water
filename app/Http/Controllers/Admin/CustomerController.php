@@ -198,8 +198,29 @@ class CustomerController extends Controller
         $this->authorizeCustomer($customer);
         $progress = $this->pointService->getProgressToNextLevel($customer);
 
-        $pdf = Pdf::loadView('admin.customers.card-pdf', compact('customer', 'progress'))
-            ->setPaper([0, 0, 241.89, 153.07]); // ukuran kartu standar 85.6mm x 54mm
+        // QR code sebagai base64 SVG
+        $options = new \chillerlan\QRCode\QROptions([
+            'outputInterface' => \chillerlan\QRCode\Output\QRMarkupSVG::class,
+            'eccLevel'        => \chillerlan\QRCode\Common\EccLevel::L,
+            'scale'           => 5,
+            'outputBase64'    => false,
+            'addQuietzone'    => true,
+            'quietzoneSize'   => 1,
+        ]);
+        $qr = new \chillerlan\QRCode\QRCode($options);
+        $svgRaw   = $qr->render($customer->customer_id);
+        $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($svgRaw);
+
+        // Flask SVG icon
+        $flaskSvg = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>';
+        $iconBase64 = 'data:image/svg+xml;base64,' . base64_encode($flaskSvg);
+
+        $user = $customer; // pass as $user to the view
+
+        // CR80: 85.6mm × 54mm = 242.65pt × 153.07pt
+        $pdf = Pdf::loadView('portal.member-card-pdf', compact('user', 'progress', 'qrBase64', 'iconBase64'))
+            ->setPaper([0, 0, 242.65, 153.07])
+            ->setOption('isFontSubsettingEnabled', true);
 
         return $pdf->download("kartu-member-{$customer->customer_id}.pdf");
     }
