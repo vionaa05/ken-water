@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'constants/app_colors.dart';
 import 'services/storage_service.dart';
 import 'screens/login_screen.dart';
-import 'screens/customer/customer_home_screen.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/customer/customer_main_screen.dart';
+import 'screens/admin/admin_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +23,9 @@ class KenWaterApp extends StatelessWidget {
       final user = StorageService.getUser();
       if (user != null) {
         if (user.isAdmin) {
-          initialScreen = const AdminDashboardScreen();
+          initialScreen = const AdminMainScreen();
         } else {
-          initialScreen = const CustomerHomeScreen();
+          initialScreen = const CustomerMainScreen();
         }
       }
     }
