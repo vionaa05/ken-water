@@ -3,8 +3,9 @@ import '../constants/app_colors.dart';
 import '../constants/api_constants.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
-import 'customer/customer_home_screen.dart';
-import 'admin/admin_dashboard_screen.dart';
+import 'customer/customer_main_screen.dart';
+import 'admin/admin_main_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -102,12 +103,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user.isAdmin) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+          MaterialPageRoute(builder: (_) => const AdminMainScreen()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+          MaterialPageRoute(builder: (_) => const CustomerMainScreen()),
         );
       }
     } else {
@@ -282,6 +283,35 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Masuk',
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Belum punya akun? Daftar
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'Belum punya akun? ',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                          );
+                        },
+                        child: const Text(
+                          'Daftar Sekarang',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 24),
