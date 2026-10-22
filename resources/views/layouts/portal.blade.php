@@ -71,7 +71,7 @@
                         Pesan Galon
                     </a>
                     <a href="{{ route('portal.orders.index') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('portal.orders.*') ? 'bg-white/20 text-white font-bold' : 'text-blue-100 hover:text-white hover:bg-white/10' }}">
-                        Pesanan Saya
+                        Riwayat
                     </a>
                     <a href="{{ route('portal.rewards.index') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors {{ request()->routeIs('portal.rewards.*') ? 'bg-white/20 text-white font-bold' : 'text-blue-100 hover:text-white hover:bg-white/10' }}">
                         Reward
@@ -119,10 +119,6 @@
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                                 Profil Saya
                             </a>
-                            <a href="{{ route('portal.orders.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-primary transition-colors">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                Riwayat Pesanan
-                            </a>
                             <a href="{{ route('portal.transactions') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-primary transition-colors">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 Riwayat Transaksi
@@ -134,10 +130,6 @@
                             <a href="{{ route('portal.vouchers.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-primary transition-colors">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                                 Voucher & Promo
-                            </a>
-                            <a href="{{ route('portal.complaints.index') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-primary transition-colors">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                                Keluhan & Bantuan
                             </a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <form method="POST" action="{{ route('logout') }}">
@@ -199,7 +191,7 @@
             </a>
             <a href="{{ route('portal.orders.index') }}" class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('portal.orders.*') ? 'text-primary font-bold' : 'text-gray-400 hover:text-gray-600 font-medium' }} transition-colors">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                <span class="text-[10px]">Pesanan</span>
+                <span class="text-[10px]">Riwayat</span>
             </a>
             <a href="{{ route('portal.rewards.index') }}" class="flex flex-col items-center justify-center py-1 {{ request()->routeIs('portal.rewards.*') ? 'text-primary font-bold' : 'text-gray-400 hover:text-gray-600 font-medium' }} transition-colors">
                 <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
