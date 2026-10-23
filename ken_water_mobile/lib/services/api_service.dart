@@ -375,6 +375,38 @@ class ApiService {
     }
   }
 
+  static Future<bool> markNotificationRead(int id) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.customerMarkNotifRead(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      final data = jsonDecode(response.body);
+      return data['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> markAllNotificationsRead() async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.customerMarkAllNotifRead),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      final data = jsonDecode(response.body);
+      return data['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ==========================================
   // ADMIN / KASIR
   // ==========================================
@@ -724,6 +756,31 @@ class ApiService {
       };
     } catch (e) {
       return {'success': false, 'message': 'Gagal terhubung ke server'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAdminSegmentation() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminSegmentation),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'customers': data['customers'] ?? [],
+          'chart_segment_data': data['chart_segment_data'] ?? [],
+          'chart_level_data': data['chart_level_data'] ?? [],
+          'summary': data['summary'] ?? {},
+        };
+      }
+      return {'success': false, 'customers': [], 'message': data['message'] ?? 'Gagal memuat segmentasi'};
+    } catch (e) {
+      return {'success': false, 'customers': [], 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 }

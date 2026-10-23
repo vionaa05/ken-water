@@ -9,6 +9,7 @@ import '../../../services/api_service.dart';
 import '../../../services/storage_service.dart';
 import '../../login_screen.dart';
 import '../customer_main_screen.dart';
+import '../notifications_screen.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -21,6 +22,7 @@ class _HomeTabState extends State<HomeTab> {
   UserModel? _user;
   Map<String, dynamic>? _cardData;
   List<OrderModel> _orders = [];
+  int _unreadNotifs = 0;
   bool _isLoading = true;
 
   final currencyFormatter =
@@ -37,10 +39,12 @@ class _HomeTabState extends State<HomeTab> {
     setState(() => _isLoading = true);
     final cardResult = await ApiService.getCustomerMemberCard();
     final ordersList = await ApiService.getCustomerOrders();
+    final notifResult = await ApiService.getNotifications();
     if (mounted) {
       setState(() {
         if (cardResult['success'] == true) _cardData = cardResult['card'];
         _orders = ordersList;
+        _unreadNotifs = notifResult['unread_count'] ?? 0;
         _isLoading = false;
       });
     }
@@ -150,6 +154,48 @@ class _HomeTabState extends State<HomeTab> {
                 ],
               ),
               actions: [
+                IconButton(
+                  tooltip: 'Notifikasi',
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.notifications_outlined,
+                          color: AppColors.textPrimary, size: 24),
+                      if (_unreadNotifs > 0)
+                        Positioned(
+                          right: -3,
+                          top: -3,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: const BoxDecoration(
+                              color: AppColors.error,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$_unreadNotifs',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const NotificationsScreen()),
+                    ).then((_) => _loadData());
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.logout_rounded,
                       color: AppColors.textSecondary),

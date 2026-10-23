@@ -2,7 +2,7 @@ class ApiConstants {
   // Default fallback base URL:
   // - 10.0.2.2 untuk Android Emulator
   // - Ganti dengan IP LAN PC (misal: 192.168.1.15) saat menggunakan HP fisik via WiFi
-  static String baseUrl = 'http://192.168.1.3:8000/api';
+  static String baseUrl = 'http://192.168.1.15:8000/api';
 
   static void setBaseUrl(String url) {
     if (url.endsWith('/')) {
@@ -32,6 +32,7 @@ class ApiConstants {
   static String customerComplaintDetail(int id) => '$baseUrl/customer/complaints/$id';
   static String get customerNotifications => '$baseUrl/customer/notifications';
   static String customerMarkNotifRead(int id) => '$baseUrl/customer/notifications/$id/read';
+  static String get customerMarkAllNotifRead => '$baseUrl/customer/notifications/read-all';
 
   // Admin
   static String get adminDashboard => '$baseUrl/admin/dashboard';
@@ -47,4 +48,5 @@ class ApiConstants {
   static String adminCancelRedemption(int id) => '$baseUrl/admin/redemptions/$id/cancel';
   static String get adminRewards => '$baseUrl/admin/rewards';
   static String adminRewardDetail(int id) => '$baseUrl/admin/rewards/$id';
+  static String get adminSegmentation => '$baseUrl/admin/segmentation';
 }

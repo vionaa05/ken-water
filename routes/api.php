@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Notifikasi
         Route::get('/notifications', [CustomerApiController::class, 'notifications']);
+        Route::post('/notifications/read-all', [CustomerApiController::class, 'markAllNotificationsRead']);
         Route::post('/notifications/{id}/read', [CustomerApiController::class, 'markNotificationRead']);
     });
 
@@ -67,5 +68,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/redemptions', [AdminApiController::class, 'redemptions']);
         Route::patch('/redemptions/{redemption}/validate', [AdminApiController::class, 'validateRedemption']);
         Route::patch('/redemptions/{redemption}/cancel', [AdminApiController::class, 'cancelRedemption']);
+        Route::get('/segmentation', [AdminApiController::class, 'segmentation']);
     });
 });

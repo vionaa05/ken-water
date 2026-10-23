@@ -633,4 +633,69 @@ class AdminApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Penukaran tidak ditemukan.'], 404);
         }
     }
+
+    /**
+     * Segmentasi Pelanggan (Serupa Web Admin SegmentationController)
+     */
+    public function segmentation(Request $request)
+    {
+        try {
+            $customers = User::customers()
+                ->with('completedOrders')
+                ->get()
+                ->map(function ($customer) {
+                    return [
+                        'id' => $customer->id,
+                        'customer_id' => $customer->customer_id ?? 'KW-' . str_pad($customer->id, 5, '0', STR_PAD_LEFT),
+                        'name' => $customer->name,
+                        'phone' => $customer->phone,
+                        'status' => $customer->status,
+                        'loyalty_level' => $customer->loyalty_level ?? 'bronze',
+                        'points' => (int) $customer->points,
+                        'segment' => $customer->segment,
+                        'customer_value' => $customer->customer_value,
+                        'order_count' => (int) $customer->order_count_current_period,
+                        'total_spend' => (float) $customer->total_spend_current_period,
+                        'days_since_last_order' => $customer->getDaysSinceLastOrder(),
+                        'registered_at' => $customer->registered_at ? $customer->registered_at->format('d M Y') : '-',
+                    ];
+                });
+
+            $segmentCounts = $customers->groupBy('segment')->map(fn($group) => $group->count());
+            $levelCounts = $customers->groupBy('loyalty_level')->map(fn($group) => $group->count());
+            $valueCounts = $customers->groupBy('customer_value')->map(fn($group) => $group->count());
+
+            $chartSegmentData = [
+                ['label' => 'Baru', 'count' => $segmentCounts->get('Baru', 0), 'color' => '#3b82f6'],
+                ['label' => 'Reguler', 'count' => $segmentCounts->get('Reguler', 0), 'color' => '#10b981'],
+                ['label' => 'Sering Beli', 'count' => $segmentCounts->get('Sering Beli', 0), 'color' => '#f59e0b'],
+                ['label' => 'Hampir Hilang', 'count' => $segmentCounts->get('Hampir Hilang', 0), 'color' => '#ef4444'],
+            ];
+
+            $chartLevelData = [
+                ['label' => 'Bronze', 'count' => $levelCounts->get('bronze', 0), 'color' => '#CD7F32'],
+                ['label' => 'Silver', 'count' => $levelCounts->get('silver', 0), 'color' => '#94A3B8'],
+                ['label' => 'Gold', 'count' => $levelCounts->get('gold', 0), 'color' => '#F59E0B'],
+            ];
+
+            return response()->json([
+                'success' => true,
+                'customers' => $customers,
+                'chart_segment_data' => $chartSegmentData,
+                'chart_level_data' => $chartLevelData,
+                'summary' => [
+                    'total_customers' => $customers->count(),
+                    'segment_counts' => $segmentCounts,
+                    'level_counts' => $levelCounts,
+                    'value_counts' => $valueCounts,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat segmentasi: ' . $e->getMessage(),
+                'customers' => [],
+            ], 500);
+        }
+    }
 }

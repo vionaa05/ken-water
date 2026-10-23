@@ -466,10 +466,11 @@ class CustomerApiController extends Controller
                     return [
                         'id' => $n->id,
                         'title' => $n->title,
-                        'message' => $n->message,
+                        'body' => $n->body,
+                        'message' => $n->body,
                         'type' => $n->type ?? 'info',
                         'is_read' => (bool) $n->is_read,
-                        'created_at' => $n->created_at->format('d M Y, H:i'),
+                        'created_at' => $n->created_at ? $n->created_at->format('d M Y, H:i') : '-',
                     ];
                 });
 
@@ -491,6 +492,22 @@ class CustomerApiController extends Controller
         try {
             Notification::where('user_id', $request->user()->id)
                 ->where('id', $id)
+                ->update(['is_read' => true]);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false], 500);
+        }
+    }
+
+    /**
+     * Tandai Semua Notifikasi sebagai Dibaca
+     */
+    public function markAllNotificationsRead(Request $request)
+    {
+        try {
+            Notification::where('user_id', $request->user()->id)
+                ->where('is_read', false)
                 ->update(['is_read' => true]);
 
             return response()->json(['success' => true]);
