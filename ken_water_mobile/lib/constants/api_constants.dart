@@ -25,6 +25,7 @@ class ApiConstants {
   static String get customerOrders => '$baseUrl/customer/orders';
   static String get customerCreateOrder => '$baseUrl/customer/orders';
   static String get customerProfile => '$baseUrl/customer/profile';
+  static String get customerChangePassword => '$baseUrl/customer/profile/password';
   static String get customerRewards => '$baseUrl/customer/rewards';
   static String customerRedeemReward(int id) => '$baseUrl/customer/rewards/$id/redeem';
   static String get customerVouchers => '$baseUrl/customer/vouchers';
@@ -33,11 +34,13 @@ class ApiConstants {
   static String get customerNotifications => '$baseUrl/customer/notifications';
   static String customerMarkNotifRead(int id) => '$baseUrl/customer/notifications/$id/read';
   static String get customerMarkAllNotifRead => '$baseUrl/customer/notifications/read-all';
+  static String get customerReactivate => '$baseUrl/customer/reactivate';
 
   // Admin
   static String get adminDashboard => '$baseUrl/admin/dashboard';
   static String get adminSearchCustomer => '$baseUrl/admin/customers/search';
   static String get adminCustomers => '$baseUrl/admin/customers';
+  static String adminCustomerDetail(int id) => '$baseUrl/admin/customers/$id';
   static String get adminTransactions => '$baseUrl/admin/transactions';
   static String get adminOrders => '$baseUrl/admin/orders';
   static String adminUpdateOrderStatus(int id) => '$baseUrl/admin/orders/$id/status';
@@ -49,4 +52,10 @@ class ApiConstants {
   static String get adminRewards => '$baseUrl/admin/rewards';
   static String adminRewardDetail(int id) => '$baseUrl/admin/rewards/$id';
   static String get adminSegmentation => '$baseUrl/admin/segmentation';
+  static String get adminSettings => '$baseUrl/admin/settings';
+  static String get adminVouchers => '$baseUrl/admin/vouchers';
+  static String adminAssignVoucher(int id) => '$baseUrl/admin/vouchers/$id/assign';
+  static String get adminPromos => '$baseUrl/admin/promos';
+  static String get adminCampaigns => '$baseUrl/admin/campaigns';
+  static String adminCampaignDetail(int id) => '$baseUrl/admin/campaigns/$id';
 }
