@@ -207,12 +207,14 @@ class AdminApiController extends Controller
     public function orders(Request $request)
     {
         $statusCounts = [
-            'dipesan' => Order::where('source', 'online')->where('status', 'dipesan')->count(),
-            'diproses' => Order::where('source', 'online')->where('status', 'diproses')->count(),
-            'diantar' => Order::where('source', 'online')->where('status', 'diantar')->count(),
-            'siap_diambil' => Order::where('source', 'online')->where('status', 'siap_diambil')->count(),
-            'selesai' => Order::where('source', 'online')->where('status', 'selesai')->count(),
-            'dibatalkan' => Order::where('source', 'online')->where('status', 'dibatalkan')->count(),
+            'dipesan' => Order::where('status', 'dipesan')->count(),
+            'diproses' => Order::where('status', 'diproses')->count(),
+            'diantar' => Order::where('status', 'diantar')->count(),
+            'siap_diambil' => Order::where('status', 'siap_diambil')->count(),
+            'selesai' => Order::where('status', 'selesai')->count(),
+            'dibatalkan' => Order::where('status', 'dibatalkan')->count(),
+            'kasir' => Order::where('source', 'kasir')->count(),
+            'online' => Order::where('source', 'online')->count(),
         ];
 
         $orders = Order::with('user:id,name,phone,customer_id,loyalty_level', 'processor:id,name')
@@ -414,20 +416,38 @@ class AdminApiController extends Controller
             };
 
             $complaint->status = $status;
-            $note = $request->admin_notes ?: $request->response;
-            if ($note !== null) {
-                $complaint->response = $note;
-                $complaint->action_taken = $note;
+            $note = $request->input('admin_notes') ?? $request->input('response');
+            if ($note !== null && trim($note) !== '') {
+                $complaint->response = trim($note);
+                $complaint->action_taken = trim($note);
             }
+            $complaint->handled_by = $request->user()->id;
             if ($status === 'selesai') {
                 $complaint->resolved_at = now();
-                $complaint->handled_by = $request->user()->id;
             }
             $complaint->save();
 
+            // Kirim notifikasi ke pelanggan jika ada tanggapan
+            if ($complaint->user_id && !empty($complaint->response)) {
+                \App\Models\Notification::create([
+                    'user_id' => $complaint->user_id,
+                    'title' => $status === 'selesai' ? 'Keluhan Selesai Ditanggapi' : 'Keluhan Sedang Ditangani',
+                    'body' => "Keluhan \"{$complaint->category}\": {$complaint->response}",
+                    'type' => 'complaint_update',
+                    'reference_id' => $complaint->id,
+                    'reference_type' => 'complaint',
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Status keluhan berhasil diperbarui.',
+                'message' => 'Tindak lanjut dan status keluhan berhasil dicatat.',
+                'complaint' => [
+                    'id' => $complaint->id,
+                    'status' => $complaint->status,
+                    'admin_notes' => $complaint->response ?? $complaint->action_taken,
+                    'response' => $complaint->response,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Keluhan tidak ditemukan.'], 404);
@@ -1017,10 +1037,44 @@ class AdminApiController extends Controller
                     'valid_until' => $p->valid_until ? $p->valid_until->format('Y-m-d') : null,
                     'is_used' => (bool) $p->is_used,
                     'is_expired' => (bool) $p->is_expired,
+                    'is_active' => (bool) $p->isActive(),
                 ];
             });
 
         return response()->json(['success' => true, 'promos' => $promos]);
+    }
+
+    /**
+     * Toggle / Aktifkan Promo Personal (Admin)
+     */
+    public function togglePromo(Request $request, $id)
+    {
+        $promo = PersonalPromo::findOrFail($id);
+
+        // Jika promo expired atau lewat masa berlaku, perpanjang dan aktifkan kembali
+        if ($promo->is_expired || ($promo->valid_until && now()->gt($promo->valid_until->endOfDay()))) {
+            $promo->is_expired = false;
+            $promo->is_used = false;
+            $promo->valid_from = now()->startOfDay();
+            $promo->valid_until = now()->addDays(7)->endOfDay();
+        } else {
+            // Toggle status expired
+            $promo->is_expired = !$promo->is_expired;
+        }
+
+        $promo->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => $promo->isActive() ? 'Promo personal berhasil diaktifkan!' : 'Promo personal dinonaktifkan.',
+            'is_active' => $promo->isActive(),
+            'promo' => [
+                'id' => $promo->id,
+                'is_active' => $promo->isActive(),
+                'is_expired' => (bool) $promo->is_expired,
+                'valid_until' => $promo->valid_until ? $promo->valid_until->format('Y-m-d') : null,
+            ],
+        ]);
     }
 
     /**
@@ -1054,7 +1108,9 @@ class AdminApiController extends Controller
             'discount_value' => $request->discount_value,
             'valid_from' => $request->valid_from,
             'valid_until' => $request->valid_until,
-            'period_start' => $user->current_period_start,
+            'is_used' => false,
+            'is_expired' => false,
+            'period_start' => $user->current_period_start ?? now(),
         ]);
 
         Notification::create([
@@ -1181,4 +1237,106 @@ class AdminApiController extends Controller
         $campaign->delete();
         return response()->json(['success' => true, 'message' => 'Kampanye berhasil dihapus.']);
     }
+
+    /**
+     * Laporan Penjualan Admin (Ringkasan, Tren, Top Pelanggan)
+     */
+    public function reports(Request $request)
+    {
+        try {
+            $today      = Carbon::today();
+            $thisMonth  = Carbon::now()->startOfMonth();
+            $lastMonth  = Carbon::now()->subMonth()->startOfMonth();
+            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+
+            // Ringkasan bulan ini vs bulan lalu
+            $thisMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('total_price');
+            $lastMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('total_price');
+            $thisMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('gallon_qty');
+            $lastMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('gallon_qty');
+            $thisMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
+            $lastMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->count();
+
+            // Tren 7 hari terakhir
+            $dailyTrend = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::today()->subDays($i);
+                $rev  = (float) Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('total_price');
+                $gal  = (int)   Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('gallon_qty');
+                $dailyTrend[] = [
+                    'date'     => $date->format('d M'),
+                    'revenue'  => $rev,
+                    'gallons'  => $gal,
+                ];
+            }
+
+            // Top 5 pelanggan bulan ini berdasarkan total belanja
+            $topCustomers = Order::with('user:id,name,customer_id,loyalty_level')
+                ->where('status', 'selesai')
+                ->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])
+                ->whereNotNull('user_id')
+                ->select('user_id', DB::raw('SUM(total_price) as total_spent'), DB::raw('SUM(gallon_qty) as total_gallons'), DB::raw('COUNT(*) as order_count'))
+                ->groupBy('user_id')
+                ->orderByDesc('total_spent')
+                ->take(5)
+                ->get()
+                ->map(fn($o) => [
+                    'name'         => $o->user ? $o->user->name : 'Anonim',
+                    'customer_id'  => $o->user ? $o->user->customer_id : '-',
+                    'level'        => $o->user ? $o->user->loyalty_level : 'bronze',
+                    'total_spent'  => (float) $o->total_spent,
+                    'total_gallons'=> (int)   $o->total_gallons,
+                    'order_count'  => (int)   $o->order_count,
+                ]);
+
+            // Perbandingan sumber pesanan
+            $onlineCount = (int) Order::where('status', 'selesai')->where('source', 'online')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
+            $kasirCount  = (int) Order::where('status', 'selesai')->where('source', 'kasir')->whereBetween('order_date',  [$thisMonth, $today->copy()->endOfDay()])->count();
+
+            return response()->json([
+                'success' => true,
+                'summary' => [
+                    'this_month_revenue'  => $thisMonthRevenue,
+                    'last_month_revenue'  => $lastMonthRevenue,
+                    'this_month_gallons'  => $thisMonthGallons,
+                    'last_month_gallons'  => $lastMonthGallons,
+                    'this_month_orders'   => $thisMonthOrders,
+                    'last_month_orders'   => $lastMonthOrders,
+                    'online_orders'       => $onlineCount,
+                    'kasir_orders'        => $kasirCount,
+                ],
+                'daily_trend'   => $dailyTrend,
+                'top_customers' => $topCustomers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal memuat laporan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus Voucher (Admin)
+     */
+    public function deleteVoucher(Request $request, $id)
+    {
+        $voucher = \App\Models\Voucher::find($id);
+        if (!$voucher) {
+            return response()->json(['success' => false, 'message' => 'Voucher tidak ditemukan.'], 404);
+        }
+        $voucher->delete();
+        return response()->json(['success' => true, 'message' => 'Voucher berhasil dihapus.']);
+    }
+
+    /**
+     * Hapus Promo Personal (Admin)
+     */
+    public function deletePromo(Request $request, $id)
+    {
+        $promo = PersonalPromo::find($id);
+        if (!$promo) {
+            return response()->json(['success' => false, 'message' => 'Promo tidak ditemukan.'], 404);
+        }
+        $promo->delete();
+        return response()->json(['success' => true, 'message' => 'Promo berhasil dihapus.']);
+    }
 }
+

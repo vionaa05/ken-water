@@ -9,12 +9,15 @@ use App\Models\RewardRedemption;
 use App\Models\UserVoucher;
 use App\Models\Complaint;
 use App\Models\Notification;
+use App\Models\Setting;
+use App\Models\PersonalPromo;
 use App\Services\PointService;
 use App\Services\ReactivationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class CustomerApiController extends Controller
 {
@@ -597,6 +600,64 @@ class CustomerApiController extends Controller
             return response()->json(['success' => true]);
         } catch (\Exception $e) {
             return response()->json(['success' => false], 500);
+        }
+    }
+
+    /**
+     * Pengaturan Publik (Harga Galon Real-time untuk Pelanggan)
+     */
+    public function getSettings(Request $request)
+    {
+        try {
+            $price = Setting::where('key', 'price_per_gallon')->value('value') ?? 5000;
+            $points = Setting::where('key', 'points_per_gallon')->value('value') ?? 1;
+            return response()->json([
+                'success' => true,
+                'settings' => [
+                    'price_per_gallon' => (float) $price,
+                    'points_per_gallon' => (int) $points,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => true,
+                'settings' => ['price_per_gallon' => 5000.0, 'points_per_gallon' => 1],
+            ]);
+        }
+    }
+
+    /**
+     * Promo Personal Aktif untuk Pelanggan
+     */
+    public function personalPromos(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $today = Carbon::today();
+
+            $promos = PersonalPromo::where('user_id', $user->id)
+                ->where('valid_from', '<=', $today->copy()->endOfDay())
+                ->where('valid_until', '>=', $today->copy()->startOfDay())
+                ->get()
+                ->map(function ($promo) {
+                    return [
+                        'id'             => $promo->id,
+                        'name'           => $promo->name,
+                        'description'    => $promo->description,
+                        'discount_type'  => $promo->discount_type,
+                        'discount_value' => (float) $promo->discount_value,
+                        'valid_from'     => $promo->valid_from
+                            ? \Carbon\Carbon::parse($promo->valid_from)->format('d M Y')
+                            : null,
+                        'valid_until'    => $promo->valid_until
+                            ? \Carbon\Carbon::parse($promo->valid_until)->format('d M Y')
+                            : null,
+                    ];
+                });
+
+            return response()->json(['success' => true, 'promos' => $promos]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'promos' => []]);
         }
     }
 

@@ -56,6 +56,11 @@
                 </div>
                 <h4 class="font-bold text-gray-900">{{ $complaint->category }}</h4>
                 <p class="text-sm text-gray-600 mt-1 line-clamp-2">{{ $complaint->description }}</p>
+                @if($complaint->action_taken || $complaint->response)
+                <div class="mt-2.5 p-2.5 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-900">
+                    <span class="font-semibold text-blue-800">Tindak Lanjut:</span> {{ $complaint->action_taken ?? $complaint->response }}
+                </div>
+                @endif
                 <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
                     <span>Dari: <span class="font-medium text-gray-700">{{ $complaint->user->name }}</span></span>
                     @if($complaint->handler)

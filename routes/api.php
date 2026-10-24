@@ -51,6 +51,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Reaktivasi Akun
         Route::post('/reactivate', [CustomerApiController::class, 'reactivate']);
+
+        // Pengaturan Publik (harga galon real-time)
+        Route::get('/settings', [CustomerApiController::class, 'getSettings']);
+
+        // Promo Personal Aktif
+        Route::get('/promos', [CustomerApiController::class, 'personalPromos']);
     });
 
     // ==========================================
@@ -87,10 +93,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/vouchers/{id}/assign', [AdminApiController::class, 'assignVoucher']);
         Route::get('/promos', [AdminApiController::class, 'promos']);
         Route::post('/promos', [AdminApiController::class, 'createPromo']);
+        Route::patch('/promos/{id}/toggle', [AdminApiController::class, 'togglePromo']);
 
         // Kampanye CRM WhatsApp
         Route::get('/campaigns', [AdminApiController::class, 'campaigns']);
         Route::post('/campaigns', [AdminApiController::class, 'createCampaign']);
         Route::delete('/campaigns/{id}', [AdminApiController::class, 'deleteCampaign']);
+
+        // Laporan Penjualan
+        Route::get('/reports', [AdminApiController::class, 'reports']);
+
+        // Voucher Edit/Delete
+        Route::delete('/vouchers/{id}', [AdminApiController::class, 'deleteVoucher']);
+
+        // Promo Edit/Delete
+        Route::delete('/promos/{id}', [AdminApiController::class, 'deletePromo']);
     });
 });
