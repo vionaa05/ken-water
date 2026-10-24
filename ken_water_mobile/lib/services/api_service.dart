@@ -1144,6 +1144,26 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> adminTogglePromo(int id) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse(ApiConstants.adminTogglePromo(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? '',
+        'is_active': data['is_active'] ?? false,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
   // ==========================================
   // ADMIN CAMPAIGNS (WHATSAPP CRM)
   // ==========================================
@@ -1219,6 +1239,96 @@ class ApiService {
         'success': data['success'] ?? false,
         'message': data['message'] ?? 'Gagal menghapus kampanye',
       };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // CUSTOMER SETTINGS (Harga Galon Real-time)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getCustomerSettings() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.customerSettings), headers: _getHeaders())
+          .timeout(const Duration(seconds: 8));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'settings': data['settings']};
+      }
+      return {'success': false, 'settings': {'price_per_gallon': 5000.0, 'points_per_gallon': 1}};
+    } catch (_) {
+      return {'success': false, 'settings': {'price_per_gallon': 5000.0, 'points_per_gallon': 1}};
+    }
+  }
+
+  // ==========================================
+  // CUSTOMER PROMOS (Promo Personal Aktif)
+  // ==========================================
+
+  static Future<List<dynamic>> getCustomerPromos() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.customerPromos), headers: _getHeaders())
+          .timeout(const Duration(seconds: 8));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['promos'] ?? [];
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ==========================================
+  // ADMIN REPORTS (Laporan Penjualan)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminReports() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.adminReports), headers: _getHeaders())
+          .timeout(const Duration(seconds: 15));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'summary': data['summary'] ?? {},
+          'daily_trend': data['daily_trend'] ?? [],
+          'top_customers': data['top_customers'] ?? [],
+        };
+      }
+      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+    } catch (e) {
+      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+    }
+  }
+
+  // ==========================================
+  // ADMIN DELETE VOUCHER & PROMO
+  // ==========================================
+
+  static Future<Map<String, dynamic>> adminDeleteVoucher(int id) async {
+    try {
+      final response = await http
+          .delete(Uri.parse(ApiConstants.adminDeleteVoucher(id)), headers: _getHeaders())
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      return {'success': data['success'] ?? false, 'message': data['message'] ?? ''};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminDeletePromo(int id) async {
+    try {
+      final response = await http
+          .delete(Uri.parse(ApiConstants.adminDeletePromo(id)), headers: _getHeaders())
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      return {'success': data['success'] ?? false, 'message': data['message'] ?? ''};
     } catch (e) {
       return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }

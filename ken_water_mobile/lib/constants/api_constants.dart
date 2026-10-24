@@ -35,6 +35,8 @@ class ApiConstants {
   static String customerMarkNotifRead(int id) => '$baseUrl/customer/notifications/$id/read';
   static String get customerMarkAllNotifRead => '$baseUrl/customer/notifications/read-all';
   static String get customerReactivate => '$baseUrl/customer/reactivate';
+  static String get customerSettings => '$baseUrl/customer/settings';
+  static String get customerPromos => '$baseUrl/customer/promos';
 
   // Admin
   static String get adminDashboard => '$baseUrl/admin/dashboard';
@@ -55,7 +57,11 @@ class ApiConstants {
   static String get adminSettings => '$baseUrl/admin/settings';
   static String get adminVouchers => '$baseUrl/admin/vouchers';
   static String adminAssignVoucher(int id) => '$baseUrl/admin/vouchers/$id/assign';
+  static String adminDeleteVoucher(int id) => '$baseUrl/admin/vouchers/$id';
   static String get adminPromos => '$baseUrl/admin/promos';
+  static String adminTogglePromo(int id) => '$baseUrl/admin/promos/$id/toggle';
+  static String adminDeletePromo(int id) => '$baseUrl/admin/promos/$id';
   static String get adminCampaigns => '$baseUrl/admin/campaigns';
   static String adminCampaignDetail(int id) => '$baseUrl/admin/campaigns/$id';
+  static String get adminReports => '$baseUrl/admin/reports';
 }

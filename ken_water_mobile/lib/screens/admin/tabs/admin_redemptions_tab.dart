@@ -1124,19 +1124,28 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
                           ],
                         ),
                         const SizedBox(height: 14),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.send_rounded, size: 16),
-                            label: Text('Bagikan ke Pelanggan', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
-                            onPressed: () => _showAssignVoucherDialog(v),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.send_rounded, size: 16),
+                                label: Text('Bagikan ke Pelanggan', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13)),
+                                onPressed: () => _showAssignVoucherDialog(v),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(color: AppColors.primary),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                              tooltip: 'Hapus Voucher',
+                              onPressed: () => _deleteVoucher(v),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1145,6 +1154,39 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
               ),
       ),
     );
+  }
+
+  Future<void> _deleteVoucher(Map v) async {
+    final name = v['name'] ?? v['code'] ?? 'Voucher';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Voucher'),
+        content: Text('Yakin ingin menghapus voucher "$name"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final id = v['id'] is int ? v['id'] : int.tryParse(v['id'].toString()) ?? 0;
+      final res = await ApiService.adminDeleteVoucher(id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res['message'] ?? 'Voucher berhasil dihapus'),
+            backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+          ),
+        );
+        _loadAll();
+      }
+    }
   }
 
   void _showCreateVoucherDialog() {
@@ -1724,9 +1766,111 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
             ),
           ],
           const SizedBox(height: 8),
-          Text(
-            'Periode: $validFrom s/d $validUntil',
-            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Periode: $validFrom s/d $validUntil',
+                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+              ),
+              if (!isUsed)
+                InkWell(
+                  onTap: () async {
+                    final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
+                    final res = await ApiService.adminTogglePromo(promoId);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(res['message'] ?? 'Status promo berhasil diperbarui'),
+                          backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      _loadAll();
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isActive ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isActive ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isActive ? Icons.block_flipped : Icons.check_circle_rounded,
+                          size: 14,
+                          color: isActive ? AppColors.error : AppColors.success,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isActive ? 'Nonaktifkan' : 'Aktifkan',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: isActive ? AppColors.error : AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Hapus Promo'),
+                      content: Text('Yakin ingin menghapus promo "$name"?'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                          child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
+                    final res = await ApiService.adminDeletePromo(promoId);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(res['message'] ?? 'Promo berhasil dihapus'),
+                          backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+                        ),
+                      );
+                      _loadAll();
+                    }
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.delete_outline, size: 14, color: AppColors.error),
+                      SizedBox(width: 4),
+                      Text('Hapus', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.error)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

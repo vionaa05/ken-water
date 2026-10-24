@@ -28,6 +28,7 @@ class _HomeTabState extends State<HomeTab> {
   UserModel? _user;
   Map<String, dynamic>? _cardData;
   List<OrderModel> _orders = [];
+  List<dynamic> _activePromos = [];
   int _unreadNotifs = 0;
   bool _isLoading = true;
   bool _isDownloading = false;
@@ -48,11 +49,13 @@ class _HomeTabState extends State<HomeTab> {
     final cardResult = await ApiService.getCustomerMemberCard();
     final ordersList = await ApiService.getCustomerOrders();
     final notifResult = await ApiService.getNotifications();
+    final promosList = await ApiService.getCustomerPromos();
     if (mounted) {
       setState(() {
         if (cardResult['success'] == true) _cardData = cardResult['card'];
         _orders = ordersList;
         _unreadNotifs = notifResult['unread_count'] ?? 0;
+        _activePromos = promosList;
         _isLoading = false;
       });
     }
@@ -1060,6 +1063,98 @@ class _HomeTabState extends State<HomeTab> {
                       ],
 
                       const SizedBox(height: 20),
+
+                      // ===================
+                      // PROMO PERSONAL AKTIF
+                      // ===================
+                      if (_activePromos.isNotEmpty) ...[
+                        Text('Promo Spesial Untuk Anda',
+                            style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary)),
+                        const SizedBox(height: 10),
+                        ..._activePromos.map((promo) {
+                          final isPercent = promo['discount_type'] == 'persen';
+                          final val = (promo['discount_value'] as num).toDouble();
+                          final discountText = isPercent
+                              ? '${val.toStringAsFixed(0)}% OFF'
+                              : 'Diskon ${NumberFormat.currency(locale: "id_ID", symbol: "Rp ", decimalDigits: 0).format(val)}';
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF7C3AED), Color(0xFF9F67FA)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF7C3AED).withOpacity(0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.local_offer_rounded,
+                                      color: Colors.white, size: 22),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(promo['name'] ?? 'Promo Spesial',
+                                          style: GoogleFonts.inter(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis),
+                                      if ((promo['description'] ?? '').toString().isNotEmpty)
+                                        Text(promo['description'],
+                                            style: GoogleFonts.inter(
+                                                color: Colors.white70,
+                                                fontSize: 11),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis),
+                                      const SizedBox(height: 4),
+                                      Text('Berlaku s/d ${promo['valid_until'] ?? '-'}',
+                                          style: GoogleFonts.inter(
+                                              color: Colors.white60, fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(discountText,
+                                      style: GoogleFonts.inter(
+                                          color: const Color(0xFF7C3AED),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 10),
+                      ],
 
                       // ===================
                       // QUICK ACTIONS

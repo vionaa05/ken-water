@@ -37,7 +37,19 @@ class _OrderTabState extends State<OrderTab> {
     if (user?.address != null) {
       _addressController.text = user!.address!;
     }
+    _loadSettings();
     _loadVouchers();
+  }
+
+  Future<void> _loadSettings() async {
+    final res = await ApiService.getCustomerSettings();
+    if (mounted) {
+      setState(() {
+        if (res['success'] == true) {
+          _pricePerGallon = (res['settings']['price_per_gallon'] as num?)?.toDouble() ?? 5000;
+        }
+      });
+    }
   }
 
   Future<void> _loadVouchers() async {
@@ -590,19 +602,27 @@ class _OrderTabState extends State<OrderTab> {
       {bool isBold = false, Color? valueColor}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
+        Expanded(
+          child: Text(
+            label,
             style: GoogleFonts.inter(
               fontSize: 13,
               color: AppColors.textSecondary,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            )),
-        Text(value,
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-              color: valueColor ?? (isBold ? AppColors.primary : AppColors.textPrimary),
-            )),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          value,
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+            color: valueColor ?? (isBold ? AppColors.primary : AppColors.textPrimary),
+          ),
+        ),
       ],
     );
   }
@@ -640,11 +660,17 @@ class _OrderTabState extends State<OrderTab> {
                 children: [
                   Row(
                     children: [
-                      Text(code,
+                      Flexible(
+                        child: Text(
+                          code,
                           style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF15803D))),
+                              color: const Color(0xFF15803D)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(

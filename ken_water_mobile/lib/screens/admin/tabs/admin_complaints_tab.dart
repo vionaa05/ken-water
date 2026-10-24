@@ -31,10 +31,30 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
     }
   }
 
+  String _normalizeStatus(dynamic status) {
+    switch ((status ?? '').toString().toLowerCase()) {
+      case 'baru':
+      case 'menunggu':
+      case 'pending':
+        return 'pending';
+      case 'diproses':
+      case 'in_progress':
+        return 'in_progress';
+      case 'selesai':
+      case 'resolved':
+        return 'resolved';
+      case 'ditolak':
+      case 'rejected':
+        return 'rejected';
+      default:
+        return 'pending';
+    }
+  }
+
   List<dynamic> get _filteredComplaints {
     if (_selectedStatus == 'all') return _complaints;
     return _complaints.where((c) {
-      return (c['status'] ?? '').toString().toLowerCase() == _selectedStatus.toLowerCase();
+      return _normalizeStatus(c['status']) == _selectedStatus;
     }).toList();
   }
 
@@ -45,7 +65,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
     if (res['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Status keluhan berhasil diperbarui'),
+          content: Text('Status dan tindak lanjut keluhan berhasil dicatat'),
           backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
@@ -68,8 +88,8 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
     final desc = c['description'] ?? '-';
     final customer = c['customer']?['name'] ?? c['customer_name'] ?? 'Pelanggan';
     final phone = c['customer']?['phone'] ?? c['phone'] ?? '-';
-    final status = (c['status'] ?? 'pending').toString().toLowerCase();
-    final adminNotes = c['admin_notes'] ?? '';
+    final status = _normalizeStatus(c['status']);
+    final adminNotes = c['admin_notes'] ?? c['response'] ?? '';
     final createdAt = c['created_at'] != null ? c['created_at'].toString().substring(0, 10) : '-';
 
     final notesController = TextEditingController(text: adminNotes);
@@ -193,7 +213,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
 
                 // Tindakan
                 const Text(
-                  'Ubah Status:',
+                  'Ubah Status & Catat Tindak Lanjut:',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 8),
@@ -205,7 +225,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(ctx);
-                            _updateStatus(id, 'in_progress', notes: notesController.text.trim());
+                            _updateStatus(id, 'diproses', notes: notesController.text.trim());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF2563EB),
@@ -223,7 +243,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.pop(ctx);
-                            _updateStatus(id, 'resolved', notes: notesController.text.trim());
+                            _updateStatus(id, 'selesai', notes: notesController.text.trim());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.success,
@@ -241,7 +261,7 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.pop(ctx);
-                            _updateStatus(id, 'rejected', notes: notesController.text.trim());
+                            _updateStatus(id, 'ditolak', notes: notesController.text.trim());
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.error,
@@ -342,7 +362,8 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                             final subject = c['subject'] ?? 'Keluhan';
                             final desc = c['description'] ?? '-';
                             final customer = c['customer']?['name'] ?? c['customer_name'] ?? 'Pelanggan';
-                            final status = (c['status'] ?? 'pending').toString().toLowerCase();
+                            final status = _normalizeStatus(c['status']);
+                            final adminNote = c['admin_notes'] ?? c['response'];
                             final date = c['created_at'] != null
                                 ? c['created_at'].toString().substring(0, 10)
                                 : '';
@@ -401,6 +422,34 @@ class _AdminComplaintsTabState extends State<AdminComplaintsTab> {
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                                         ),
+                                        if (adminNote != null && adminNote.toString().isNotEmpty) ...[
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFEFF6FF),
+                                              borderRadius: BorderRadius.circular(8),
+                                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                                            ),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Icon(Icons.check_circle_outline, size: 14, color: Color(0xFF2563EB)),
+                                                const SizedBox(width: 6),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Tindak Lanjut: $adminNote',
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Color(0xFF1E40AF),
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                         const SizedBox(height: 10),
                                         const Row(
                                           mainAxisAlignment: MainAxisAlignment.end,

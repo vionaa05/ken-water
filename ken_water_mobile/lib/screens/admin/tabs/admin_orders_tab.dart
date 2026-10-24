@@ -53,8 +53,20 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
   List<OrderModel> get _filteredOrders {
     return _allOrders.where((order) {
       final normalizedStatus = _normalizeStatus(order.status);
-      final matchesFilter = _selectedFilter == 'all' ||
-          normalizedStatus == _selectedFilter;
+      final isKasir = (order.source ?? '').toLowerCase() == 'kasir' || (order.source ?? '').toLowerCase() == 'langsung';
+      final isOnline = !isKasir;
+
+      bool matchesFilter;
+      if (_selectedFilter == 'all') {
+        matchesFilter = true;
+      } else if (_selectedFilter == 'kasir') {
+        matchesFilter = isKasir;
+      } else if (_selectedFilter == 'online') {
+        matchesFilter = isOnline;
+      } else {
+        matchesFilter = normalizedStatus == _selectedFilter;
+      }
+
       final query = _searchQuery.toLowerCase();
       final matchesSearch = query.isEmpty ||
           (order.orderNumber.toLowerCase().contains(query)) ||

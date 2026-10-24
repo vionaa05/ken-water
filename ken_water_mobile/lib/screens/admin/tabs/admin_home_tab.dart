@@ -7,6 +7,7 @@ import '../../../models/order_model.dart';
 import '../../../services/api_service.dart';
 import '../../login_screen.dart';
 import '../admin_campaigns_screen.dart';
+import '../admin_reports_screen.dart';
 
 class AdminHomeTab extends StatefulWidget {
   const AdminHomeTab({super.key});
@@ -623,6 +624,16 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.bar_chart_rounded, color: AppColors.textSecondary),
+            tooltip: 'Laporan & Statistik',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminReportsScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
             tooltip: 'Pengaturan Sistem',
             onPressed: _showSettingsDialog,
@@ -855,6 +866,74 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                               elevation: 0,
                             ),
                             child: const Text('Kelola', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Banner Pintasan Laporan & Analitik
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x06000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDE9FE),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.insights_rounded, color: Color(0xFF7C3AED), size: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Text(
+                                  'Laporan & Analitik Penjualan',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Rekap bulanan, tren harian, & top pelanggan',
+                                  style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminReportsScreen()),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF7C3AED),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              elevation: 0,
+                            ),
+                            child: const Text('Buka', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
                         ],
                       ),
