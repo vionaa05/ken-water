@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\SegmentationController;
 use App\Http\Controllers\Admin\LoyaltyController;
 use App\Http\Controllers\Admin\CampaignController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\OrderPortalController;
 use App\Http\Controllers\Portal\RewardPortalController;
@@ -98,6 +99,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Kampanye CRM
     Route::resource('campaigns', CampaignController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+
+    // Laporan Penjualan
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
     // Pengaturan
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');

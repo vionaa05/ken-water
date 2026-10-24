@@ -47,16 +47,39 @@
         }
         
         [x-cloak] { display: none !important; }
+
+        @media print {
+            html, body {
+                height: auto !important;
+                min-height: 100% !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            aside, header, nav, .print\:hidden {
+                display: none !important;
+            }
+            main, .max-w-7xl {
+                overflow: visible !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                background: transparent !important;
+            }
+        }
     </style>
+    @stack('styles')
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden" x-data="{ sidebarOpen: true }">
+<body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden print:h-auto print:overflow-visible print:bg-white" x-data="{ sidebarOpen: true }">
 
     <!-- Sidebar -->
-    <aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="fixed inset-y-0 left-0 z-50 w-64 bg-secondary text-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full flex flex-col">
+    <aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="fixed inset-y-0 left-0 z-50 w-64 bg-secondary text-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full flex flex-col print:hidden">
         <div class="flex items-center justify-between h-16 px-4 bg-gray-900 border-b border-gray-800">
             <span class="text-lg font-bold flex items-center gap-2">
-                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                Ken Water BO
+                Ken Water
             </span>
             <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -105,6 +128,13 @@
                 </div>
 
                 <div class="mt-4 pt-4 border-t border-gray-800">
+                    <a href="{{ route('admin.reports.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.reports.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+                        <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        Laporan
+                    </a>
+                </div>
+
+                <div class="pt-2 border-t border-gray-800">
                     <a href="{{ route('admin.settings.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.settings.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
                         <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Pengaturan
@@ -115,9 +145,9 @@
     </aside>
 
     <!-- Main Content -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible print:block print:w-full">
         <!-- Top Navbar -->
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40 print:hidden">
             <div class="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
                 <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700 md:hidden focus:outline-none">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -141,8 +171,8 @@
         </header>
 
         <!-- Main View -->
-        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
-            <div class="max-w-7xl mx-auto">
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8 print:p-0 print:m-0 print:bg-white print:overflow-visible print:w-full">
+            <div class="max-w-7xl mx-auto print:max-w-none print:w-full print:m-0 print:p-0">
                 @if (session('success'))
                 <div class="mb-4 bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm" role="alert">
                     <p>{{ session('success') }}</p>
@@ -171,4 +201,5 @@
     </div>
 
 </body>
+@stack('scripts')
 </html>
