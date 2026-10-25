@@ -98,6 +98,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Kampanye CRM WhatsApp
         Route::get('/campaigns', [AdminApiController::class, 'campaigns']);
         Route::post('/campaigns', [AdminApiController::class, 'createCampaign']);
+        Route::get('/campaigns/{id}', [AdminApiController::class, 'campaignDetail']);
+        Route::post('/campaigns/{id}/mark-sent', [AdminApiController::class, 'markCampaignSent']);
         Route::delete('/campaigns/{id}', [AdminApiController::class, 'deleteCampaign']);
 
         // Laporan Penjualan

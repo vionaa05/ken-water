@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Depo Air Minum & Portal Loyalitas',
+                    'Depot Air Minum & Portal Loyalitas',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,

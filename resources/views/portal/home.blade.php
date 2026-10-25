@@ -8,18 +8,70 @@
         <h1 class="text-2xl font-bold text-gray-900">Halo, {{ explode(' ', $user->name)[0] }}!</h1>
         <p class="text-sm text-gray-500 mt-1">Siap pesan air minum hari ini?</p>
     </div>
+</div>
+
+<!-- Digital Loyalty Member Card (Identik dengan Mobile) -->
+<div class="mb-6">
+    <div class="relative w-full aspect-[1.75/1] sm:aspect-[1.9/1] max-w-md mx-auto rounded-2xl shadow-lg overflow-hidden p-5 flex flex-col justify-between
+        @if($user->loyalty_level === 'gold') bg-gradient-to-br from-[#78350f] via-[#d97706] to-[#f59e0b] text-white
+        @elseif($user->loyalty_level === 'silver') bg-gradient-to-br from-[#1e3a5f] via-[#334155] to-[#64748b] text-white
+        @else bg-gradient-to-br from-[#0284c7] via-[#0369a1] to-[#0c4a6e] text-white
+        @endif">
+        
+        <!-- Decoration Circles -->
+        <div class="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-white opacity-10 pointer-events-none"></div>
+        <div class="absolute -bottom-8 -right-3 w-20 h-20 rounded-full bg-white opacity-5 pointer-events-none"></div>
+
+        <!-- Top Row: Logo & Level Badge -->
+        <div class="flex justify-between items-start relative z-10">
+            <div class="flex items-center gap-1.5">
+                <svg class="w-5 h-5 text-white/80" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                <span class="font-bold text-sm tracking-wider text-white/90">Ken Water</span>
+            </div>
+            <div class="px-2.5 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/30 text-white">
+                {{ $user->loyalty_level === 'gold' ? '🥇' : ($user->loyalty_level === 'silver' ? '🥈' : '🥉') }} {{ strtoupper($user->loyalty_level) }}
+            </div>
+        </div>
+
+        <!-- Bottom Row: Name, ID, Poin, Status, and QR -->
+        <div class="relative z-10 flex justify-between items-end">
+            <div class="min-w-0 pr-2">
+                <p class="font-bold text-base text-white leading-tight truncate">{{ $user->name }}</p>
+                <p class="font-mono mt-0.5 text-xs text-white/70 tracking-widest">{{ $user->customer_id }}</p>
+                <p class="mt-2 text-sm font-bold text-white flex items-center gap-1">
+                    <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    {{ (int)$user->points }} Poin
+                </p>
+                <div class="mt-1">
+                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold {{ ($user->status ?? 'aktif') === 'aktif' ? 'bg-emerald-400/25 text-emerald-200' : 'bg-red-400/25 text-red-200' }}">
+                        {{ ($user->status ?? 'aktif') === 'aktif' ? '● Aktif' : '● Tidak Aktif' }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="w-14 h-14 bg-white rounded-lg p-1 shadow-sm shrink-0 flex items-center justify-center">
+                @if(isset($qrBase64) && $qrBase64)
+                <img src="{{ $qrBase64 }}" alt="QR" class="w-full h-full object-contain">
+                @else
+                <div class="text-[8px] text-gray-400 font-mono text-center">QR CODE</div>
+                @endif
+            </div>
+        </div>
+    </div>
     
-    <!-- Status Aktif / Loyalty Badge -->
-    <a href="{{ route('portal.member-card') }}" class="flex flex-col items-center p-2 bg-gradient-to-r from-amber-100 to-yellow-100 rounded-lg shadow-sm border border-yellow-200">
-        <span class="text-xs text-gray-600 font-medium mb-1">Level Anda</span>
-        <span class="px-2 py-1 rounded-full text-xs font-bold uppercase
-            @if($user->loyalty_level === 'bronze') bg-[#cd7f32] text-white
-            @elseif($user->loyalty_level === 'silver') bg-gray-300 text-gray-800
-            @else bg-yellow-400 text-yellow-900
-            @endif">
-            {{ $user->loyalty_level }}
-        </span>
-    </a>
+    <!-- Action Unduh / Lihat Kartu -->
+    <div class="flex justify-center gap-3 mt-2.5">
+        <a href="{{ route('portal.member-card') }}" class="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+            Detail Kartu Member
+        </a>
+        <span class="text-gray-300">•</span>
+        <a href="{{ route('portal.member-card.download') }}" class="text-xs text-gray-600 font-medium hover:text-primary flex items-center gap-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Unduh PDF
+        </a>
+    </div>
 </div>
 
 <!-- Promo & Voucher Banner -->

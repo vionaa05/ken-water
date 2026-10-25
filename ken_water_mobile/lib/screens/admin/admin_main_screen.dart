@@ -16,13 +16,19 @@ class AdminMainScreen extends StatefulWidget {
 class _AdminMainScreenState extends State<AdminMainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    AdminHomeTab(),
-    AdminOrdersTab(),
-    AdminCustomersTab(),
-    AdminComplaintsTab(),
-    AdminRedemptionsTab(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      const AdminHomeTab(),
+      AdminOrdersTab(key: AdminOrdersTab.globalKey),
+      const AdminCustomersTab(),
+      const AdminComplaintsTab(),
+      const AdminRedemptionsTab(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +75,12 @@ class _AdminMainScreenState extends State<AdminMainScreen> {
       int index, IconData activeIcon, IconData inactiveIcon, String label) {
     final isActive = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () {
+        setState(() => _currentIndex = index);
+        if (index == 1) {
+          AdminOrdersTab.globalKey.currentState?.reloadOrders();
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

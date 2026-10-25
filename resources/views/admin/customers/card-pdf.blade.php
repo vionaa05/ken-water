@@ -4,198 +4,217 @@
     <meta charset="UTF-8">
     <title>Kartu Member - {{ ($customer ?? $user)->customer_id }}</title>
     <style>
-        @page {
-            margin: 0;
-            size: 241.89pt 153.07pt; /* Ukuran standar kartu CR-80: 85.6mm x 54mm */
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #ffffff;
-            -webkit-print-color-adjust: exact;
-        }
         @php
             $c = $customer ?? $user;
             $level = strtolower($c->loyalty_level ?? 'bronze');
             if ($level === 'gold') {
-                $bgColor = '#1e293b';
-                $accentColor = '#f59e0b';
-                $badgeBg = '#d97706';
-                $badgeText = '#ffffff';
-                $borderColor = '#f59e0b';
+                $gradFrom    = '#78350f';
+                $gradVia     = '#d97706';
+                $gradTo      = '#f59e0b';
+                $emoji       = '🥇';
             } elseif ($level === 'silver') {
-                $bgColor = '#334155';
-                $accentColor = '#cbd5e1';
-                $badgeBg = '#64748b';
-                $badgeText = '#ffffff';
-                $borderColor = '#94a3b8';
+                $gradFrom    = '#1e3a5f';
+                $gradVia     = '#334155';
+                $gradTo      = '#64748b';
+                $emoji       = '🥈';
             } else {
-                $bgColor = '#3b2514';
-                $accentColor = '#f59e0b';
-                $badgeBg = '#92400e';
-                $badgeText = '#ffffff';
-                $borderColor = '#b45309';
+                /* bronze / default */
+                $gradFrom    = '#0284c7';
+                $gradVia     = '#0369a1';
+                $gradTo      = '#0c4a6e';
+                $emoji       = '🥉';
             }
+            $status = strtolower($c->status ?? 'aktif');
+            $isActive = ($status === 'aktif');
         @endphp
-        .card-container {
-            width: 241.89pt;
+
+        @page {
+            margin: 0;
+            size: 242.65pt 153.07pt;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 242.65pt;
             height: 153.07pt;
-            background-color: {{ $bgColor }};
-            color: #ffffff;
-            padding: 10pt 12pt;
-            position: relative;
-            border: 2pt solid {{ $borderColor }};
+            background: transparent;
+            -webkit-print-color-adjust: exact;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        .card {
+            position: absolute;
+            top: 0; left: 0;
+            width: 242.65pt;
+            height: 153.07pt;
+            border-radius: 14pt;
             overflow: hidden;
+            color: #ffffff;
+            background-color: {{ $gradFrom }};
+            background: linear-gradient(135deg, {{ $gradFrom }} 0%, {{ $gradVia }} 50%, {{ $gradTo }} 100%);
         }
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8pt;
+
+        /* Decorative circles */
+        .deco-tr {
+            position: absolute;
+            top: -20pt;
+            right: -20pt;
+            width: 85pt;
+            height: 85pt;
+            border-radius: 43pt;
+            background: rgba(255, 255, 255, 0.08);
         }
-        .brand-title {
+        .deco-br {
+            position: absolute;
+            bottom: -22pt;
+            right: 20pt;
+            width: 60pt;
+            height: 60pt;
+            border-radius: 30pt;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .content {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            padding: 12pt 14pt;
+        }
+
+        /* Header */
+        .hdr { width: 100%; border-collapse: collapse; }
+        .hdr td { vertical-align: middle; padding: 0; }
+
+        .icon-img {
+            width: 12pt;
+            height: 12pt;
+            vertical-align: middle;
+            margin-right: 4pt;
+            opacity: 0.85;
+        }
+        .brand-name {
+            font-size: 9pt;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 0.8pt;
+            vertical-align: middle;
+        }
+        .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.20);
+            border-radius: 12pt;
+            padding: 2.5pt 8pt;
+            font-size: 6.5pt;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 0.5pt;
+        }
+
+        /* Bottom Section */
+        .bottom {
+            position: absolute;
+            bottom: 11pt;
+            left: 14pt;
+            right: 14pt;
+        }
+        .brow { width: 100%; border-collapse: collapse; }
+        .brow td { vertical-align: bottom; padding: 0; }
+
+        .mname {
             font-size: 11pt;
             font-weight: bold;
             color: #ffffff;
-            letter-spacing: 0.5pt;
-        }
-        .brand-sub {
-            font-size: 5.5pt;
-            color: {{ $accentColor }};
-            text-transform: uppercase;
-            letter-spacing: 0.8pt;
-            margin-top: 1pt;
-        }
-        .badge {
-            background-color: {{ $badgeBg }};
-            color: {{ $badgeText }};
-            font-size: 6.5pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1pt;
-            padding: 2.5pt 7pt;
-            border-radius: 8pt;
-            border: 1pt solid {{ $accentColor }};
-            display: inline-block;
-        }
-        .content-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 4pt;
-        }
-        .label-text {
-            font-size: 5pt;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.8pt;
-            margin-bottom: 1.5pt;
-        }
-        .name-text {
-            font-size: 9.5pt;
-            font-weight: bold;
-            color: #ffffff;
-            letter-spacing: 0.5pt;
+            line-height: 1.1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 140pt;
         }
-        .id-text {
+        .mid {
             font-family: 'Courier New', Courier, monospace;
-            font-size: 8.5pt;
-            font-weight: bold;
-            color: {{ $accentColor }};
+            font-size: 7.5pt;
+            color: rgba(255, 255, 255, 0.75);
             letter-spacing: 1.2pt;
             margin-top: 2pt;
         }
-        .info-sub {
-            font-size: 5.5pt;
-            color: #cbd5e1;
-            margin-top: 3pt;
-        }
-        .right-box {
-            text-align: right;
-            vertical-align: bottom;
-        }
-        .points-box {
-            background-color: rgba(255, 255, 255, 0.08);
-            border: 0.75pt solid {{ $accentColor }};
-            border-radius: 4pt;
-            padding: 3pt 5pt;
-            text-align: center;
-            display: inline-block;
-            min-width: 48pt;
-        }
-        .points-val {
-            font-size: 11pt;
+        .points-row {
+            margin-top: 5pt;
+            font-size: 9pt;
             font-weight: bold;
             color: #ffffff;
-            line-height: 1;
         }
-        .points-lbl {
-            font-size: 4.5pt;
-            color: {{ $accentColor }};
-            text-transform: uppercase;
-            letter-spacing: 0.5pt;
-            margin-top: 1pt;
+        .status-pill {
+            display: inline-block;
+            margin-top: 3pt;
+            padding: 1.5pt 5pt;
+            border-radius: 4pt;
+            font-size: 6pt;
+            font-weight: bold;
+            background: {{ $isActive ? 'rgba(52, 211, 153, 0.28)' : 'rgba(248, 113, 113, 0.28)' }};
+            color: {{ $isActive ? '#a7f3d0' : '#fecaca' }};
         }
-        .footer-bar {
-            position: absolute;
-            bottom: 4pt;
-            left: 12pt;
-            right: 12pt;
-            font-size: 4.5pt;
-            color: #94a3b8;
-            text-align: center;
-            border-top: 0.5pt solid rgba(255, 255, 255, 0.15);
-            padding-top: 2pt;
+
+        /* QR */
+        .qr-td {
+            text-align: right;
+            vertical-align: bottom;
+            width: 48pt;
+        }
+        .qr-box {
+            display: inline-block;
+            background: #ffffff;
+            border-radius: 6pt;
+            padding: 3pt;
+            width: 45pt;
+            height: 45pt;
+        }
+        .qr-img {
+            width: 39pt;
+            height: 39pt;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="card-container">
-        <table class="header-table">
+
+<div class="card">
+    <div class="deco-tr"></div>
+    <div class="deco-br"></div>
+    <div class="content">
+
+        <table class="hdr" cellpadding="0" cellspacing="0">
             <tr>
-                <td style="vertical-align: middle;">
-                    <div class="brand-title">💧 KEN WATER</div>
-                    <div class="brand-sub">Depot Air Minum Isi Ulang</div>
+                <td>
+                    <img class="icon-img" src="{{ $iconBase64 }}" alt="">
+                    <span class="brand-name">Ken Water</span>
                 </td>
-                <td style="text-align: right; vertical-align: middle;">
-                    <div class="badge">{{ $c->loyalty_level ?? 'BRONZE' }}</div>
+                <td style="text-align:right;">
+                    <span class="badge">{{ $emoji }} {{ strtoupper($c->loyalty_level ?? 'BRONZE') }}</span>
                 </td>
             </tr>
         </table>
 
-        <table class="content-table">
-            <tr>
-                <td style="vertical-align: top;">
-                    <div class="label-text">Nama Pelanggan</div>
-                    <div class="name-text">{{ strtoupper($c->name) }}</div>
-                    <div class="id-text">{{ $c->customer_id ?? 'KW-XXXXXX' }}</div>
-                    <div class="info-sub">
-                        {{ $c->phone ? 'WA: ' . $c->phone : '' }} 
-                        @if($c->registered_at)
-                            • Sejak {{ \Carbon\Carbon::parse($c->registered_at)->format('m/Y') }}
-                        @endif
-                    </div>
-                </td>
-                <td class="right-box">
-                    <div class="points-box">
-                        <div class="points-val">{{ number_format($c->points ?? 0) }}</div>
-                        <div class="points-lbl">Poin Reward</div>
-                    </div>
-                </td>
-            </tr>
-        </table>
-
-        <div class="footer-bar">
-            Tunjukkan kartu ini saat transaksi di depot Ken Water • Sistem CRM Ken Water
+        <div class="bottom">
+            <table class="brow" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <div class="mname">{{ $c->name }}</div>
+                        <div class="mid">{{ $c->customer_id }}</div>
+                        <div class="points-row">&#9733; {{ (int)($c->points ?? 0) }} Poin</div>
+                        <div>
+                            <span class="status-pill">{{ $isActive ? '● Aktif' : '● Tidak Aktif' }}</span>
+                        </div>
+                    </td>
+                    <td class="qr-td">
+                        <div class="qr-box">
+                            <img class="qr-img" src="{{ $qrBase64 }}" alt="QR">
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>
+
     </div>
+</div>
+
 </body>
 </html>

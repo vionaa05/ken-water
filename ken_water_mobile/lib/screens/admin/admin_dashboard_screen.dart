@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../models/order_model.dart';
 import '../../services/api_service.dart';
 import '../login_screen.dart';
+import 'tabs/admin_orders_tab.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -232,33 +233,48 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: foundCustomer == null
-                          ? null
-                          : () async {
-                              final qty = int.tryParse(qtyController.text) ?? 1;
-                              Navigator.pop(ctx);
+                      onPressed: () async {
+                        if (foundCustomer == null) {
+                          final query = customerIdController.text.trim();
+                          if (query.isEmpty) {
+                            setModalState(() {
+                              searchError = 'Silakan masukkan ID, No. HP, atau Nama pelanggan terlebih dahulu.';
+                            });
+                            return;
+                          }
+                          await searchCustomer();
+                          if (foundCustomer == null) return;
+                        }
 
-                              final res = await ApiService.adminCreateTransaction(
-                                customerId: foundCustomer!.customerId,
-                                gallonQty: qty,
-                                paymentMethod: paymentMethod,
-                              );
+                        final qty = int.tryParse(qtyController.text) ?? 1;
+                        Navigator.pop(ctx);
 
-                              if (!mounted) return;
-                              if (res['success'] == true) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Transaksi Berhasil! ${res['message']}'),
-                                    backgroundColor: AppColors.success,
-                                  ),
-                                );
-                                _loadDashboard();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text(res['message']), backgroundColor: AppColors.error),
-                                );
-                              }
-                            },
+                        final targetId = foundCustomer!.customerId.isNotEmpty
+                            ? foundCustomer!.customerId
+                            : foundCustomer!.id.toString();
+
+                        final res = await ApiService.adminCreateTransaction(
+                          customerId: targetId,
+                          gallonQty: qty,
+                          paymentMethod: paymentMethod,
+                        );
+
+                        if (!mounted) return;
+                        if (res['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Transaksi Berhasil! ${res['message']}'),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                          _loadDashboard();
+                          AdminOrdersTab.globalKey.currentState?.reloadOrders();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(res['message'] ?? 'Gagal membuat transaksi'), backgroundColor: AppColors.error),
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -300,7 +316,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         onPressed: _showNewTransactionDialog,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.point_of_sale, color: Colors.white),
-        label: const Text('Kasir Depo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text('Kasir Depot', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
       body: RefreshIndicator(
         onRefresh: _loadDashboard,

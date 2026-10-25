@@ -1691,21 +1691,28 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 3),
                     Row(
                       children: [
                         const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
                         const SizedBox(width: 4),
-                        Text(
-                          '$customerName ($customerId)',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        Expanded(
+                          child: Text(
+                            '$customerName ($customerId)',
+                            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -1734,20 +1741,27 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      discountType == 'persen' ? 'Diskon ${discountValue.toInt()}%' : 'Potongan Rp ${discountValue.toInt()}',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppColors.primary,
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 18),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          discountType == 'persen' ? 'Diskon ${discountValue.toInt()}%' : 'Potongan Rp ${discountValue.toInt()}',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppColors.primary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   'Hingga $validUntil',
                   style: GoogleFonts.inter(
@@ -1763,112 +1777,135 @@ class _AdminRedemptionsTabState extends State<AdminRedemptionsTab> {
             Text(
               description,
               style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, fontStyle: FontStyle.italic),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
           const SizedBox(height: 8),
+          const Divider(height: 16, color: Color(0xFFF1F5F9)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Periode: $validFrom s/d $validUntil',
-                style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
-              ),
-              if (!isUsed)
-                InkWell(
-                  onTap: () async {
-                    final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
-                    final res = await ApiService.adminTogglePromo(promoId);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(res['message'] ?? 'Status promo berhasil diperbarui'),
-                          backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      _loadAll();
-                    }
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isActive ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
+              Expanded(
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.textMuted),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        'Periode: $validFrom s/d $validUntil',
+                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isActive ? Icons.block_flipped : Icons.check_circle_rounded,
-                          size: 14,
-                          color: isActive ? AppColors.error : AppColors.success,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isActive ? 'Nonaktifkan' : 'Aktifkan',
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: isActive ? AppColors.error : AppColors.success,
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isUsed) ...[
+                    InkWell(
+                      onTap: () async {
+                        final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
+                        final res = await ApiService.adminTogglePromo(promoId);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(res['message'] ?? 'Status promo berhasil diperbarui'),
+                              backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          _loadAll();
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isActive ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isActive ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              const SizedBox(width: 8),
-              InkWell(
-                onTap: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Hapus Promo'),
-                      content: Text('Yakin ingin menghapus promo "$name"?'),
-                      actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(ctx, true),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                          child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isActive ? Icons.block_flipped : Icons.check_circle_rounded,
+                              size: 13,
+                              color: isActive ? AppColors.error : AppColors.success,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isActive ? 'Nonaktif' : 'Aktifkan',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isActive ? AppColors.error : AppColors.success,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  );
-                  if (confirm == true) {
-                    final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
-                    final res = await ApiService.adminDeletePromo(promoId);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(res['message'] ?? 'Promo berhasil dihapus'),
-                          backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+                    const SizedBox(width: 6),
+                  ],
+                  InkWell(
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Hapus Promo'),
+                          content: Text('Yakin ingin menghapus promo "$name"?'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                              child: const Text('Hapus', style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
                         ),
                       );
-                      _loadAll();
-                    }
-                  }
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
+                      if (confirm == true) {
+                        final promoId = p['id'] is int ? p['id'] : int.tryParse(p['id'].toString()) ?? 0;
+                        final res = await ApiService.adminDeletePromo(promoId);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(res['message'] ?? 'Promo berhasil dihapus'),
+                              backgroundColor: res['success'] == true ? AppColors.success : AppColors.error,
+                            ),
+                          );
+                          _loadAll();
+                        }
+                      }
+                    },
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFECACA)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.delete_outline, size: 13, color: AppColors.error),
+                          SizedBox(width: 3),
+                          Text('Hapus', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.error)),
+                        ],
+                      ),
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.delete_outline, size: 14, color: AppColors.error),
-                      SizedBox(width: 4),
-                      Text('Hapus', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.error)),
-                    ],
-                  ),
-                ),
+                ],
               ),
             ],
           ),

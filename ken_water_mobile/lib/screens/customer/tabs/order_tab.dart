@@ -4,9 +4,12 @@ import 'package:intl/intl.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api_service.dart';
 import '../../../services/storage_service.dart';
+import '../customer_main_screen.dart';
 
 class OrderTab extends StatefulWidget {
   const OrderTab({super.key});
+
+  static Map<String, dynamic>? pendingPromoToSelect;
 
   @override
   State<OrderTab> createState() => _OrderTabState();
@@ -25,7 +28,9 @@ class _OrderTabState extends State<OrderTab> {
 
   List<dynamic> _vouchers = [];
   Map<String, dynamic>? _selectedVoucher;
-  bool _loadingVouchers = false;
+  List<dynamic> _promos = [];
+  Map<String, dynamic>? _selectedPromo;
+  bool _loadingDiscounts = false;
 
   final currencyFormatter =
       NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -38,7 +43,7 @@ class _OrderTabState extends State<OrderTab> {
       _addressController.text = user!.address!;
     }
     _loadSettings();
-    _loadVouchers();
+    _loadDiscounts();
   }
 
   Future<void> _loadSettings() async {
@@ -52,17 +57,25 @@ class _OrderTabState extends State<OrderTab> {
     }
   }
 
-  Future<void> _loadVouchers() async {
-    setState(() => _loadingVouchers = true);
-    final res = await ApiService.getVouchers();
+  Future<void> _loadDiscounts() async {
+    setState(() => _loadingDiscounts = true);
+    final voucherRes = await ApiService.getVouchers();
+    final promoList = await ApiService.getCustomerPromos();
     if (mounted) {
       setState(() {
-        _loadingVouchers = false;
-        if (res['success'] == true) {
-          final list = res['vouchers'] as List? ?? [];
+        _loadingDiscounts = false;
+        if (voucherRes['success'] == true) {
+          final list = voucherRes['vouchers'] as List? ?? [];
           _vouchers = list
               .where((v) => v['is_active'] == true && v['is_used'] != true)
               .toList();
+        }
+        _promos = promoList;
+
+        if (OrderTab.pendingPromoToSelect != null) {
+          _selectedPromo = OrderTab.pendingPromoToSelect;
+          _selectedVoucher = null;
+          OrderTab.pendingPromoToSelect = null;
         }
       });
     }
@@ -82,18 +95,28 @@ class _OrderTabState extends State<OrderTab> {
   }
 
   double get _discountAmount {
-    if (_selectedVoucher == null) return 0;
-    final minPurchase =
-        (_selectedVoucher!['min_purchase'] as num?)?.toDouble() ?? 0;
-    if (_subtotalPrice < minPurchase) return 0;
+    if (_selectedVoucher != null) {
+      final minPurchase =
+          (_selectedVoucher!['min_purchase'] as num?)?.toDouble() ?? 0;
+      if (_subtotalPrice < minPurchase) return 0;
 
-    final type = _selectedVoucher!['discount_type'] ?? 'nominal';
-    final val = (_selectedVoucher!['discount_value'] as num?)?.toDouble() ?? 0;
-    if (type == 'persen') {
-      return (_subtotalPrice * (val / 100)).clamp(0, _subtotalPrice);
-    } else {
-      return val.clamp(0, _subtotalPrice);
+      final type = _selectedVoucher!['discount_type'] ?? 'nominal';
+      final val = (_selectedVoucher!['discount_value'] as num?)?.toDouble() ?? 0;
+      if (type == 'persen') {
+        return (_subtotalPrice * (val / 100)).clamp(0, _subtotalPrice);
+      } else {
+        return val.clamp(0, _subtotalPrice);
+      }
+    } else if (_selectedPromo != null) {
+      final type = _selectedPromo!['discount_type'] ?? 'nominal';
+      final val = (_selectedPromo!['discount_value'] as num?)?.toDouble() ?? 0;
+      if (type == 'persen') {
+        return (_subtotalPrice * (val / 100)).clamp(0, _subtotalPrice);
+      } else {
+        return val.clamp(0, _subtotalPrice);
+      }
     }
+    return 0;
   }
 
   double get _totalPrice =>
@@ -111,6 +134,7 @@ class _OrderTabState extends State<OrderTab> {
       paymentMethod: _paymentMethod,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       voucherId: _selectedVoucher?['id'],
+      promoId: _selectedPromo?['id'],
     );
 
     if (!mounted) return;
@@ -123,10 +147,11 @@ class _OrderTabState extends State<OrderTab> {
       _notesController.clear();
       setState(() {
         _selectedVoucher = null;
+        _selectedPromo = null;
         _deliveryMethod = 'antar';
         _paymentMethod = 'tunai';
       });
-      _loadVouchers();
+      _loadDiscounts();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(result['message'] ?? 'Gagal membuat pesanan'),
@@ -139,6 +164,7 @@ class _OrderTabState extends State<OrderTab> {
   void _showSuccessDialog(String message) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
@@ -154,29 +180,46 @@ class _OrderTabState extends State<OrderTab> {
                   color: AppColors.success, size: 52),
             ),
             const SizedBox(height: 16),
-            Text('Pesanan Berhasil!',
+            Text('Pesanan Anda Berhasil!',
                 style: GoogleFonts.inter(
                     fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(message,
-                style: GoogleFonts.inter(
-                    color: AppColors.textSecondary, fontSize: 14),
-                textAlign: TextAlign.center),
+            Text(
+              message.isNotEmpty
+                  ? message
+                  : 'Pesanan galon Anda berhasil dibuat. Tim Ken Water akan segera memproses dan mengantarkannya.',
+              style: GoogleFonts.inter(
+                  color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
         actions: [
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+                context
+                    .findAncestorStateOfType<CustomerMainScreenState>()
+                    ?.switchTab(0);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pesanan berhasil dibuat dan sedang diproses.'),
+                    backgroundColor: AppColors.success,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text('Selesai',
+              child: Text('Kembali ke Beranda',
                   style: GoogleFonts.inter(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+                      color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
             ),
           ),
         ],
@@ -186,6 +229,19 @@ class _OrderTabState extends State<OrderTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (OrderTab.pendingPromoToSelect != null) {
+      final p = OrderTab.pendingPromoToSelect;
+      OrderTab.pendingPromoToSelect = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _selectedPromo = p;
+            _selectedVoucher = null;
+          });
+        }
+      });
+    }
+
     final qty = int.tryParse(_qtyController.text) ?? 1;
 
     return Scaffold(
@@ -355,7 +411,7 @@ class _OrderTabState extends State<OrderTab> {
                       selected: _deliveryMethod == 'ambil_sendiri',
                       icon: Icons.store_rounded,
                       title: 'Ambil Sendiri',
-                      subtitle: 'Di depo kami',
+                      subtitle: 'Di depot kami',
                       onTap: () =>
                           setState(() => _deliveryMethod = 'ambil_sendiri'),
                     ),
@@ -474,6 +530,14 @@ class _OrderTabState extends State<OrderTab> {
                         'Diskon Voucher (${_selectedVoucher!['code'] ?? 'Kupon'})',
                         '- ${currencyFormatter.format(_discountAmount)}',
                         valueColor: AppColors.success,
+                        isBold: true,
+                      ),
+                    ] else if (_selectedPromo != null) ...[
+                      const SizedBox(height: 8),
+                      _buildSummaryRow(
+                        'Promo Personal (${_selectedPromo!['name'] ?? 'Spesial'})',
+                        '- ${currencyFormatter.format(_discountAmount)}',
+                        valueColor: const Color(0xFF7C3AED),
                         isBold: true,
                       ),
                     ],
@@ -628,6 +692,88 @@ class _OrderTabState extends State<OrderTab> {
   }
 
   Widget _buildVoucherSection() {
+    if (_selectedPromo != null) {
+      final name = _selectedPromo!['name'] ?? 'Promo Spesial';
+      final isPercent = _selectedPromo!['discount_type'] == 'persen';
+      final val = (_selectedPromo!['discount_value'] as num?)?.toDouble() ?? 0;
+      final discountBadge =
+          isPercent ? '${val.toInt()}%' : currencyFormatter.format(val);
+      final desc = (_selectedPromo!['description'] ?? '').toString();
+
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F3FF),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFDDD6FE)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEDE9FE),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.stars_rounded,
+                  color: Color(0xFF7C3AED), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          name,
+                          style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF6D28D9)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDDD6FE),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text('Hemat $discountBadge',
+                            style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF5B21B6))),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    desc.isNotEmpty ? desc : 'Promo personal khusus untuk Anda',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: AppColors.textSecondary),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded,
+                  color: AppColors.textMuted, size: 20),
+              onPressed: () => setState(() => _selectedPromo = null),
+              tooltip: 'Hapus Promo',
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_selectedVoucher != null) {
       final code = _selectedVoucher!['code'] ?? 'VOUCHER';
       final name = _selectedVoucher!['name'] ?? 'Diskon Spesial';
@@ -707,10 +853,10 @@ class _OrderTabState extends State<OrderTab> {
       );
     }
 
-    final count = _vouchers.length;
+    final totalDiscounts = _vouchers.length + _promos.length;
 
     return InkWell(
-      onTap: _openVoucherPicker,
+      onTap: _openDiscountPicker,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -728,20 +874,20 @@ class _OrderTabState extends State<OrderTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Gunakan Voucher Diskon',
+                  Text('Gunakan Voucher / Promo Diskon',
                       style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary)),
                   Text(
-                    _loadingVouchers
-                        ? 'Memeriksa voucher...'
-                        : (count > 0
-                            ? '$count voucher tersedia untuk Anda'
-                            : 'Belum ada voucher aktif'),
+                    _loadingDiscounts
+                        ? 'Memeriksa penawaran...'
+                        : (totalDiscounts > 0
+                            ? '${_vouchers.length} voucher & ${_promos.length} promo tersedia'
+                            : 'Belum ada promo/voucher aktif'),
                     style: GoogleFonts.inter(
                         fontSize: 11,
-                        color: count > 0
+                        color: totalDiscounts > 0
                             ? AppColors.primary
                             : AppColors.textMuted),
                   ),
@@ -756,7 +902,7 @@ class _OrderTabState extends State<OrderTab> {
     );
   }
 
-  void _openVoucherPicker() {
+  void _openDiscountPicker() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -764,205 +910,410 @@ class _OrderTabState extends State<OrderTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return SafeArea(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.of(context).size.height * 0.7,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+        return DefaultTabController(
+          length: 2,
+          initialIndex: _selectedPromo != null ? 1 : 0,
+          child: SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.75,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Pilih Voucher',
-                            style: GoogleFonts.inter(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
-                        if (_selectedVoucher != null)
-                          TextButton(
-                            onPressed: () {
-                              setState(() => _selectedVoucher = null);
-                              Navigator.pop(ctx);
-                            },
-                            child: Text('Reset',
-                                style: GoogleFonts.inter(
-                                    color: AppColors.error,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Pilih Diskon',
+                          style: GoogleFonts.inter(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      if (_selectedVoucher != null || _selectedPromo != null)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedVoucher = null;
+                              _selectedPromo = null;
+                            });
+                            Navigator.pop(ctx);
+                          },
+                          child: Text('Reset',
+                              style: GoogleFonts.inter(
+                                  color: AppColors.error,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: TabBar(
+                      indicator: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
                           ),
+                        ],
+                      ),
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: AppColors.textSecondary,
+                      labelStyle: GoogleFonts.inter(
+                          fontSize: 13, fontWeight: FontWeight.bold),
+                      unselectedLabelStyle: GoogleFonts.inter(fontSize: 13),
+                      tabs: [
+                        Tab(text: 'Voucher (${_vouchers.length})'),
+                        Tab(text: 'Promo Personal (${_promos.length})'),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    if (_vouchers.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 36),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(Icons.confirmation_num_outlined,
-                                  size: 48, color: Colors.grey.shade300),
-                              const SizedBox(height: 12),
-                              Text('Belum ada voucher aktif',
-                                  style: GoogleFonts.inter(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 14)),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      Flexible(
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          itemCount: _vouchers.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (context, idx) {
-                            final v = _vouchers[idx];
-                            final isSelected =
-                                _selectedVoucher?['id'] == v['id'];
-                            final isPercent = v['discount_type'] == 'persen';
-                            final val = v['discount_value'] ?? 0;
-                            final badge = isPercent
-                                ? 'Diskon $val%'
-                                : 'Potongan ${currencyFormatter.format(val)}';
-                            final minBuy =
-                                (v['min_purchase'] as num?)?.toDouble() ?? 0;
-                            final eligible = _subtotalPrice >= minBuy;
-
-                            return InkWell(
-                              onTap: eligible
-                                  ? () {
-                                      setState(() => _selectedVoucher = v);
-                                      Navigator.pop(ctx);
-                                    }
-                                  : null,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? AppColors.primaryLight
-                                      : (eligible
-                                          ? Colors.white
-                                          : Colors.grey.shade50),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : (eligible
-                                            ? const Color(0xFFE2E8F0)
-                                            : Colors.grey.shade200),
-                                    width: isSelected ? 2 : 1,
-                                  ),
-                                ),
-                                child: Row(
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        // Tab 1: Vouchers
+                        _vouchers.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(10),
+                                    Icon(Icons.confirmation_num_outlined,
+                                        size: 48, color: Colors.grey.shade300),
+                                    const SizedBox(height: 12),
+                                    Text('Belum ada voucher aktif',
+                                        style: GoogleFonts.inter(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 14)),
+                                  ],
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: _vouchers.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, idx) {
+                                  final v = _vouchers[idx];
+                                  final isSelected =
+                                      _selectedVoucher?['id'] == v['id'];
+                                  final isPercent =
+                                      v['discount_type'] == 'persen';
+                                  final val = v['discount_value'] ?? 0;
+                                  final badge = isPercent
+                                      ? 'Diskon $val%'
+                                      : 'Potongan ${currencyFormatter.format(val)}';
+                                  final minBuy =
+                                      (v['min_purchase'] as num?)?.toDouble() ??
+                                          0;
+                                  final eligible = _subtotalPrice >= minBuy;
+
+                                  return InkWell(
+                                    onTap: eligible
+                                        ? () {
+                                            setState(() {
+                                              _selectedVoucher = v;
+                                              _selectedPromo = null;
+                                            });
+                                            Navigator.pop(ctx);
+                                          }
+                                        : null,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
-                                        color: eligible
-                                            ? AppColors.primary.withOpacity(0.1)
-                                            : Colors.grey.shade200,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(Icons.confirmation_num_rounded,
-                                          color: eligible
+                                        color: isSelected
+                                            ? AppColors.primaryLight
+                                            : (eligible
+                                                ? Colors.white
+                                                : Colors.grey.shade50),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected
                                               ? AppColors.primary
-                                              : Colors.grey,
-                                          size: 20),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                              : (eligible
+                                                  ? const Color(0xFFE2E8F0)
+                                                  : Colors.grey.shade200),
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Row(
                                         children: [
-                                          Row(
-                                            children: [
-                                              Text(v['code'] ?? '',
-                                                  style: GoogleFonts.inter(
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 13,
-                                                      color: eligible
-                                                          ? AppColors.textPrimary
-                                                          : Colors.grey)),
-                                              const SizedBox(width: 6),
-                                              Container(
-                                                padding: const EdgeInsets
-                                                    .symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2),
-                                                decoration: BoxDecoration(
-                                                  color: eligible
-                                                      ? const Color(0xFFDCFCE7)
-                                                      : Colors.grey.shade200,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: Text(badge,
-                                                    style: GoogleFonts.inter(
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.bold,
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: eligible
+                                                  ? AppColors.primary
+                                                      .withOpacity(0.1)
+                                                  : Colors.grey.shade200,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                                Icons.confirmation_num_rounded,
+                                                color: eligible
+                                                    ? AppColors.primary
+                                                    : Colors.grey,
+                                                size: 20),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text(v['code'] ?? '',
+                                                        style: GoogleFonts.inter(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 13,
+                                                            color: eligible
+                                                                ? AppColors
+                                                                    .textPrimary
+                                                                : Colors.grey)),
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
                                                         color: eligible
                                                             ? const Color(
-                                                                0xFF166534)
+                                                                0xFFDCFCE7)
+                                                            : Colors.grey
+                                                                .shade200,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Text(badge,
+                                                          style: GoogleFonts.inter(
+                                                              fontSize: 10,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: eligible
+                                                                  ? const Color(
+                                                                      0xFF166534)
+                                                                  : Colors
+                                                                      .grey)),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(v['name'] ?? '',
+                                                    style: GoogleFonts.inter(
+                                                        fontSize: 12,
+                                                        color: eligible
+                                                            ? AppColors
+                                                                .textSecondary
                                                             : Colors.grey)),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(v['name'] ?? '',
-                                              style: GoogleFonts.inter(
-                                                  fontSize: 12,
-                                                  color: eligible
-                                                      ? AppColors.textSecondary
-                                                      : Colors.grey)),
-                                          if (minBuy > 0) ...[
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'Min. belanja ${currencyFormatter.format(minBuy)}${!eligible ? ' (Belum memenuhi)' : ''}',
-                                              style: GoogleFonts.inter(
-                                                  fontSize: 11,
-                                                  color: !eligible
-                                                      ? AppColors.error
-                                                      : AppColors.textMuted),
+                                                if (minBuy > 0) ...[
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    'Min. belanja ${currencyFormatter.format(minBuy)}${!eligible ? ' (Belum memenuhi)' : ''}',
+                                                    style: GoogleFonts.inter(
+                                                        fontSize: 11,
+                                                        color: !eligible
+                                                            ? AppColors.error
+                                                            : AppColors
+                                                                .textMuted),
+                                                  ),
+                                                ],
+                                              ],
                                             ),
-                                          ],
+                                          ),
+                                          if (isSelected)
+                                            const Icon(
+                                                Icons.check_circle_rounded,
+                                                color: AppColors.primary,
+                                                size: 22),
                                         ],
                                       ),
                                     ),
-                                    if (isSelected)
-                                      const Icon(Icons.check_circle_rounded,
-                                          color: AppColors.primary, size: 22),
+                                  );
+                                },
+                              ),
+
+                        // Tab 2: Promo Personal
+                        _promos.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.local_offer_outlined,
+                                        size: 48, color: Colors.grey.shade300),
+                                    const SizedBox(height: 12),
+                                    Text('Belum ada promo personal aktif',
+                                        style: GoogleFonts.inter(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 14)),
                                   ],
                                 ),
+                              )
+                            : ListView.separated(
+                                itemCount: _promos.length,
+                                separatorBuilder: (_, __) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, idx) {
+                                  final p = _promos[idx];
+                                  final isSelected =
+                                      _selectedPromo?['id'] == p['id'];
+                                  final isPercent =
+                                      p['discount_type'] == 'persen';
+                                  final val = (p['discount_value'] as num?)
+                                          ?.toDouble() ??
+                                      0;
+                                  final badge = isPercent
+                                      ? 'Diskon ${val.toInt()}%'
+                                      : 'Potongan ${currencyFormatter.format(val)}';
+
+                                  return InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedPromo = p;
+                                        _selectedVoucher = null;
+                                      });
+                                      Navigator.pop(ctx);
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFFF5F3FF)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: isSelected
+                                              ? const Color(0xFF7C3AED)
+                                              : const Color(0xFFE2E8F0),
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF7C3AED)
+                                                  .withOpacity(0.1),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                                Icons.stars_rounded,
+                                                color: Color(0xFF7C3AED),
+                                                size: 20),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                          p['name'] ?? '',
+                                                          style: GoogleFonts
+                                                              .inter(
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontSize: 13,
+                                                                  color: AppColors
+                                                                      .textPrimary),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(
+                                                            0xFFEDE9FE),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Text(badge,
+                                                          style: GoogleFonts.inter(
+                                                              fontSize: 10,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              color: const Color(
+                                                                  0xFF6D28D9))),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if ((p['description'] ?? '')
+                                                    .toString()
+                                                    .isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  Text(p['description'],
+                                                      style: GoogleFonts.inter(
+                                                          fontSize: 12,
+                                                          color: AppColors
+                                                              .textSecondary),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                ],
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Berlaku s/d ${p['valid_until'] ?? '-'}',
+                                                  style: GoogleFonts.inter(
+                                                      fontSize: 11,
+                                                      color:
+                                                          AppColors.textMuted),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (isSelected)
+                                            const Icon(
+                                                Icons.check_circle_rounded,
+                                                color: Color(0xFF7C3AED),
+                                                size: 22),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );

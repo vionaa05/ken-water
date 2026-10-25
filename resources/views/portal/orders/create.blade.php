@@ -100,18 +100,21 @@
             Diskon & Promo
         </h3>
         
+        <input type="hidden" name="promo_id" :value="selectedPromoId">
+        <input type="hidden" name="voucher_id" :value="selectedVoucherId">
+
         <div class="space-y-2.5">
             <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
                 :class="discountType === '' ? 'border-primary bg-sky-50/40 text-primary font-semibold' : 'text-gray-700'">
-                <input type="radio" x-model="discountType" value="" @change="clearDiscount" class="w-4 h-4 text-primary border-gray-300 focus:ring-primary">
+                <input type="radio" x-model="discountType" value="" @change="clearDiscount()" class="w-4 h-4 text-primary border-gray-300 focus:ring-primary">
                 <span class="text-sm">Tanpa promo</span>
             </label>
 
             @foreach($promos as $promo)
             <label class="flex items-center gap-3 p-3 border border-sky-200 rounded-xl cursor-pointer hover:bg-sky-50/50 transition-colors bg-sky-50/20"
                 :class="discountType === 'promo_{{ $promo->id }}' ? 'border-primary bg-sky-100/50 ring-1 ring-primary' : ''">
-                <input type="radio" name="promo_id" value="{{ $promo->id }}" x-model="discountType" 
-                    @change="setDiscount({{ $promo->discount_type === 'nominal' ? $promo->discount_value : 0 }}, {{ $promo->discount_type === 'persen' ? $promo->discount_value : 0 }}, 0)"
+                <input type="radio" id="promo_radio_{{ $promo->id }}" value="promo_{{ $promo->id }}" x-model="discountType" 
+                    @change="selectPromo('{{ $promo->id }}', {{ $promo->discount_type === 'nominal' ? $promo->discount_value : 0 }}, {{ $promo->discount_type === 'persen' ? $promo->discount_value : 0 }})"
                     class="w-4 h-4 text-primary border-gray-300 focus:ring-primary">
                 <div class="flex-1">
                     <div class="flex justify-between items-center">
@@ -120,6 +123,9 @@
                             {{ $promo->discount_type === 'nominal' ? '- Rp'.number_format($promo->discount_value, 0, ',', '.') : '- '.$promo->discount_value.'%' }}
                         </span>
                     </div>
+                    @if($promo->description)
+                        <p class="text-xs text-gray-500 mt-0.5">{{ $promo->description }}</p>
+                    @endif
                 </div>
             </label>
             @endforeach
@@ -127,8 +133,8 @@
             @foreach($vouchers as $uv)
             <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
                 :class="discountType === 'voucher_{{ $uv->id }}' ? 'border-primary bg-sky-50/50 ring-1 ring-primary' : ''">
-                <input type="radio" name="voucher_id" value="{{ $uv->id }}" x-model="discountType" 
-                    @change="setDiscount({{ $uv->voucher->discount_type === 'nominal' ? $uv->voucher->discount_value : 0 }}, {{ $uv->voucher->discount_type === 'persen' ? $uv->voucher->discount_value : 0 }}, {{ $uv->voucher->min_purchase ?? 0 }})"
+                <input type="radio" id="voucher_radio_{{ $uv->id }}" value="voucher_{{ $uv->id }}" x-model="discountType" 
+                    @change="selectVoucher('{{ $uv->id }}', {{ $uv->voucher->discount_type === 'nominal' ? $uv->voucher->discount_value : 0 }}, {{ $uv->voucher->discount_type === 'persen' ? $uv->voucher->discount_value : 0 }}, {{ $uv->voucher->min_purchase ?? 0 }})"
                     class="w-4 h-4 text-primary border-gray-300 focus:ring-primary">
                 <div class="flex-1">
                     <div class="flex justify-between items-center">
@@ -191,10 +197,33 @@ document.addEventListener('alpine:init', () => {
         paymentMethod: 'tunai',
         
         discountType: '',
+        selectedPromoId: '',
+        selectedVoucherId: '',
         discountNominal: 0,
         discountPercent: 0,
         minPurchase: 0,
         discountError: '',
+
+        init() {
+            this.$nextTick(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                const pId = urlParams.get('promo_id');
+                const vId = urlParams.get('voucher_id');
+                if (pId) {
+                    const el = document.getElementById('promo_radio_' + pId);
+                    if (el) {
+                        el.checked = true;
+                        el.dispatchEvent(new Event('change'));
+                    }
+                } else if (vId) {
+                    const el = document.getElementById('voucher_radio_' + vId);
+                    if (el) {
+                        el.checked = true;
+                        el.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        },
         
         get subtotal() {
             return this.qty * this.pricePerGallon;
@@ -234,17 +263,27 @@ document.addEventListener('alpine:init', () => {
         },
         
         clearDiscount() {
+            this.discountType = '';
+            this.selectedPromoId = '';
+            this.selectedVoucherId = '';
             this.discountNominal = 0;
             this.discountPercent = 0;
             this.minPurchase = 0;
-            
-            // clear hidden inputs
-            document.querySelectorAll('input[name="promo_id"], input[name="voucher_id"]').forEach(el => {
-                if(el.type === 'radio' && !el.checked) el.checked = false; // Just to be safe, v-model handles it mostly
-            });
         },
         
-        setDiscount(nominal, percent, min) {
+        selectPromo(id, nominal, percent) {
+            this.discountType = 'promo_' + id;
+            this.selectedPromoId = id;
+            this.selectedVoucherId = '';
+            this.discountNominal = nominal;
+            this.discountPercent = percent;
+            this.minPurchase = 0;
+        },
+
+        selectVoucher(id, nominal, percent, min) {
+            this.discountType = 'voucher_' + id;
+            this.selectedVoucherId = id;
+            this.selectedPromoId = '';
             this.discountNominal = nominal;
             this.discountPercent = percent;
             this.minPurchase = min;

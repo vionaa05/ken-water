@@ -41,18 +41,24 @@ class AdminApiController extends Controller
 
         // Transaksi terbaru
         $recentOrders = Order::with('user:id,name,phone,customer_id')
-            ->latest('order_date')
-            ->take(5)
+            ->orderByDesc('order_date')
+            ->orderByDesc('id')
+            ->take(10)
             ->get()
             ->map(function ($order) {
                 return [
                     'id' => $order->id,
+                    'order_date' => $order->order_date ? $order->order_date->format('d M Y, H:i') : '-',
+                    'date' => $order->order_date ? $order->order_date->format('d M Y, H:i') : '-',
                     'customer_name' => $order->user ? $order->user->name : 'Anonim',
                     'customer_id' => $order->user ? $order->user->customer_id : '-',
+                    'customer_phone' => $order->user ? $order->user->phone : '-',
                     'gallon_qty' => $order->gallon_qty,
                     'total_price' => (float) $order->total_price,
                     'status' => $order->status,
                     'status_label' => $order->status_label,
+                    'status_color' => $order->status_color ?? '#10B981',
+                    'source' => $order->source ?? 'kasir',
                     'time' => $order->order_date ? $order->order_date->format('H:i') : '-',
                 ];
             });
@@ -141,7 +147,8 @@ class AdminApiController extends Controller
         $customer = User::where('role', 'pelanggan')
             ->where(function ($q) use ($request) {
                 $q->where('id', $request->customer_id)
-                  ->orWhere('customer_id', $request->customer_id);
+                  ->orWhere('customer_id', $request->customer_id)
+                  ->orWhere('phone', $request->customer_id);
             })->first();
 
         if (!$customer) {
@@ -176,7 +183,7 @@ class AdminApiController extends Controller
             $addedPoints = $this->pointService->addPoints(
                 $customer,
                 $qty,
-                "Pembelian {$qty} galon air di kasir depo",
+                "Pembelian {$qty} galon air di kasir depot",
                 $order->id,
                 'order'
             );
@@ -329,6 +336,9 @@ class AdminApiController extends Controller
     public function customers(Request $request)
     {
         $search = $request->get('search', '');
+        $status = $request->get('status', '');
+        $level = $request->get('level', '');
+
         $customers = \App\Models\User::where('role', 'pelanggan')
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($q2) use ($search) {
@@ -336,6 +346,12 @@ class AdminApiController extends Controller
                        ->orWhere('phone', 'like', "%{$search}%")
                        ->orWhere('customer_id', 'like', "%{$search}%");
                 });
+            })
+            ->when($status, function ($q) use ($status) {
+                $q->where('status', $status);
+            })
+            ->when($level, function ($q) use ($level) {
+                $q->where('loyalty_level', $level);
             })
             ->latest()
             ->take(50)
@@ -349,6 +365,8 @@ class AdminApiController extends Controller
                     'address' => $c->address,
                     'loyalty_level' => $c->loyalty_level,
                     'points' => (int) $c->points,
+                    'total_spent' => (int) ($c->total_spent ?? 0),
+                    'email' => $c->email ?? '-',
                     'status' => $c->status,
                     'registered_at' => $c->registered_at ? $c->registered_at->format('d M Y') : $c->created_at->format('d M Y'),
                 ];
@@ -1225,6 +1243,111 @@ class AdminApiController extends Controller
     }
 
     /**
+     * Detail Kampanye WhatsApp beserta Target Pelanggan & Pesan Siap Kirim
+     */
+    public function campaignDetail(Request $request, $id)
+    {
+        try {
+            $campaign = Campaign::with(['creator:id,name', 'voucher:id,name,code'])->findOrFail($id);
+
+            // Ambil target pelanggan sesuai segmen
+            $segments = $campaign->target_segment ?? ['semua'];
+            $type = $campaign->type;
+
+            $query = User::customers();
+            if (in_array('semua', $segments)) {
+                // all customers
+            } elseif (in_array('tidak_aktif', $segments) || $type === 'ajakan_kembali') {
+                $query->inactive();
+            } else {
+                $query->active();
+                if (in_array('loyal', $segments) || $type === 'promo_loyal') {
+                    $query->whereIn('loyalty_level', ['silver', 'gold']);
+                }
+                if ($type === 'ulang_tahun') {
+                    $query->whereMonth('birth_date', now()->month);
+                }
+            }
+
+            $customers = $query->orderBy('name')->get();
+            $portalUrl = url('/portal');
+            $voucherCode = optional($campaign->voucher)->code ?? '';
+
+            $targetCustomers = $customers->map(function ($c) use ($campaign, $voucherCode, $portalUrl) {
+                $personalizedMessage = str_replace(
+                    ['{nama}', '{kode_voucher}', '{link_portal}'],
+                    [$c->name, $voucherCode, $portalUrl],
+                    $campaign->message_template
+                );
+
+                $cleanPhone = preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $c->phone ?? ''));
+                $waUrl = 'https://wa.me/' . $cleanPhone . '?text=' . rawurlencode($personalizedMessage);
+
+                return [
+                    'id' => $c->id,
+                    'customer_id' => $c->customer_id ?? 'KW-' . str_pad($c->id, 5, '0', STR_PAD_LEFT),
+                    'name' => $c->name,
+                    'phone' => $c->phone,
+                    'clean_phone' => $cleanPhone,
+                    'loyalty_level' => $c->loyalty_level ?? 'bronze',
+                    'status' => $c->status,
+                    'message' => $personalizedMessage,
+                    'wa_url' => $waUrl,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'campaign' => [
+                    'id' => $campaign->id,
+                    'name' => $campaign->name,
+                    'type' => $campaign->type,
+                    'type_label' => match($campaign->type) {
+                        'promo_baru' => 'Promo Pelanggan Baru',
+                        'promo_loyal' => 'Promo Member Loyal',
+                        'ulang_tahun' => 'Ucapan Ulang Tahun',
+                        'ajakan_kembali' => 'Reaktivasi / Churn',
+                        default => ucfirst($campaign->type),
+                    },
+                    'period_start' => $campaign->period_start ? $campaign->period_start->format('d M Y') : '-',
+                    'period_end' => $campaign->period_end ? $campaign->period_end->format('d M Y') : '-',
+                    'message_template' => $campaign->message_template,
+                    'target_count' => $targetCustomers->count(),
+                    'sent_count' => (int) ($campaign->sent_count ?? 0),
+                    'voucher' => $campaign->voucher ? [
+                        'id' => $campaign->voucher->id,
+                        'name' => $campaign->voucher->name,
+                        'code' => $campaign->voucher->code,
+                    ] : null,
+                    'created_by' => $campaign->creator ? $campaign->creator->name : '-',
+                    'created_at' => $campaign->created_at->format('d M Y, H:i'),
+                ],
+                'target_customers' => $targetCustomers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Kampanye tidak ditemukan: ' . $e->getMessage()], 404);
+        }
+    }
+
+    /**
+     * Tandai Pesan Kampanye Terkirim (+1 counter)
+     */
+    public function markCampaignSent(Request $request, $id)
+    {
+        try {
+            $campaign = Campaign::findOrFail($id);
+            $campaign->increment('sent_count');
+            return response()->json([
+                'success' => true,
+                'sent_count' => $campaign->sent_count,
+                'message' => 'Status pengiriman tercatat.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal mencatat pengiriman.'], 404);
+        }
+    }
+
+    /**
      * Hapus Kampanye WhatsApp (Admin)
      */
     public function deleteCampaign(Request $request, $id)
@@ -1239,73 +1362,124 @@ class AdminApiController extends Controller
     }
 
     /**
-     * Laporan Penjualan Admin (Ringkasan, Tren, Top Pelanggan)
+     * Laporan Penjualan Admin (Sesuai Fitur Web: Filter Bulan & Tahun, Ringkasan, Daftar Transaksi)
      */
     public function reports(Request $request)
     {
         try {
-            $today      = Carbon::today();
-            $thisMonth  = Carbon::now()->startOfMonth();
-            $lastMonth  = Carbon::now()->subMonth()->startOfMonth();
-            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+            $month = (int) $request->get('month', now()->month);
+            $year  = (int) $request->get('year',  now()->year);
+            $month = max(1, min(12, $month));
 
-            // Ringkasan bulan ini vs bulan lalu
-            $thisMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('total_price');
-            $lastMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('total_price');
-            $thisMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('gallon_qty');
-            $lastMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('gallon_qty');
-            $thisMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
-            $lastMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->count();
+            $periodStart = Carbon::create($year, $month, 1)->startOfMonth();
+            $periodEnd   = $periodStart->copy()->endOfMonth();
+            $periodLabel = $periodStart->locale('id')->isoFormat('MMMM YYYY');
 
-            // Tren 7 hari terakhir
-            $dailyTrend = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $date = Carbon::today()->subDays($i);
-                $rev  = (float) Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('total_price');
-                $gal  = (int)   Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('gallon_qty');
-                $dailyTrend[] = [
-                    'date'     => $date->format('d M'),
-                    'revenue'  => $rev,
-                    'gallons'  => $gal,
-                ];
+            // Periode bulan lalu untuk perbandingan
+            $lastPeriodStart = $periodStart->copy()->subMonth()->startOfMonth();
+            $lastPeriodEnd   = $lastPeriodStart->copy()->endOfMonth();
+
+            // Query pesanan selesai pada periode yang dipilih
+            $orders = Order::with('user')
+                ->where('status', 'selesai')
+                ->where(function ($q) use ($periodStart, $periodEnd) {
+                    $q->whereBetween('completed_at', [$periodStart, $periodEnd])
+                      ->orWhere(function ($sub) use ($periodStart, $periodEnd) {
+                          $sub->whereNull('completed_at')
+                              ->whereBetween('order_date', [$periodStart, $periodEnd]);
+                      });
+                })
+                ->orderByDesc('completed_at')
+                ->orderByDesc('order_date')
+                ->get();
+
+            $totalRevenue = (float) $orders->sum('total_price');
+            $totalGallons = (int)   $orders->sum('gallon_qty');
+            $totalOrders  = (int)   $orders->count();
+            $onlineCount  = (int)   $orders->where('source', 'online')->count();
+            $kasirCount   = (int)   $orders->filter(fn($o) => in_array($o->source, ['kasir', 'langsung']))->count();
+            $avgOrder     = $totalOrders > 0 ? round($totalRevenue / $totalOrders) : 0;
+
+            // Bulan sebelumnya untuk perbandingan
+            $lastOrders = Order::where('status', 'selesai')
+                ->where(function ($q) use ($lastPeriodStart, $lastPeriodEnd) {
+                    $q->whereBetween('completed_at', [$lastPeriodStart, $lastPeriodEnd])
+                      ->orWhere(function ($sub) use ($lastPeriodStart, $lastPeriodEnd) {
+                          $sub->whereNull('completed_at')
+                              ->whereBetween('order_date', [$lastPeriodStart, $lastPeriodEnd]);
+                      });
+                })->get();
+
+            $lastRevenue = (float) $lastOrders->sum('total_price');
+            $lastGallons = (int)   $lastOrders->sum('gallon_qty');
+            $lastOrdersCount = (int) $lastOrders->count();
+
+            // Daftar tahun yang ada transaksi
+            $earliestYear = (int) (Order::whereNotNull('completed_at')->min(DB::raw('YEAR(completed_at)'))
+                ?: Order::min(DB::raw('YEAR(order_date)'))
+                ?: (now()->year - 2));
+            $startYear = min($earliestYear, now()->year - 2);
+            $years = [];
+            for ($y = now()->year; $y >= $startYear; $y--) {
+                $years[] = $y;
             }
 
-            // Top 5 pelanggan bulan ini berdasarkan total belanja
-            $topCustomers = Order::with('user:id,name,customer_id,loyalty_level')
-                ->where('status', 'selesai')
-                ->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])
-                ->whereNotNull('user_id')
-                ->select('user_id', DB::raw('SUM(total_price) as total_spent'), DB::raw('SUM(gallon_qty) as total_gallons'), DB::raw('COUNT(*) as order_count'))
-                ->groupBy('user_id')
-                ->orderByDesc('total_spent')
-                ->take(5)
-                ->get()
-                ->map(fn($o) => [
-                    'name'         => $o->user ? $o->user->name : 'Anonim',
-                    'customer_id'  => $o->user ? $o->user->customer_id : '-',
-                    'level'        => $o->user ? $o->user->loyalty_level : 'bronze',
-                    'total_spent'  => (float) $o->total_spent,
-                    'total_gallons'=> (int)   $o->total_gallons,
-                    'order_count'  => (int)   $o->order_count,
-                ]);
+            // Daftar pesanan diformat
+            $orderList = $orders->map(function ($o) {
+                $completedDate = $o->completed_at ?? $o->order_date;
+                return [
+                    'id' => $o->id,
+                    'order_number' => 'ORD-' . str_pad($o->id, 5, '0', STR_PAD_LEFT),
+                    'date' => $completedDate ? $completedDate->format('d M Y, H:i') : '-',
+                    'customer_name' => $o->user ? $o->user->name : 'Pelanggan Langsung (Kasir)',
+                    'customer_phone' => $o->user ? $o->user->phone : null,
+                    'customer_id' => $o->user ? ($o->user->customer_id ?? 'KW-' . str_pad($o->user->id, 5, '0', STR_PAD_LEFT)) : '-',
+                    'gallon_qty' => (int) $o->gallon_qty,
+                    'unit_price' => (float) $o->unit_price,
+                    'total_price' => (float) $o->total_price,
+                    'source' => $o->source ?? 'online',
+                    'source_label' => in_array($o->source, ['kasir', 'langsung']) ? 'Kasir Depot' : 'Aplikasi Online',
+                    'payment_method' => $o->payment_method ?? 'tunai',
+                    'delivery_method' => $o->delivery_method ?? 'ambil_sendiri',
+                ];
+            });
 
-            // Perbandingan sumber pesanan
-            $onlineCount = (int) Order::where('status', 'selesai')->where('source', 'online')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
-            $kasirCount  = (int) Order::where('status', 'selesai')->where('source', 'kasir')->whereBetween('order_date',  [$thisMonth, $today->copy()->endOfDay()])->count();
+            // Top pelanggan di periode ini
+            $topCustomers = $orders->whereNotNull('user_id')
+                ->groupBy('user_id')
+                ->map(function ($group) {
+                    $first = $group->first();
+                    return [
+                        'name' => $first->user ? $first->user->name : 'Pelanggan',
+                        'customer_id' => $first->user ? ($first->user->customer_id ?? '-') : '-',
+                        'level' => $first->user ? ($first->user->loyalty_level ?? 'bronze') : 'bronze',
+                        'total_spent' => (float) $group->sum('total_price'),
+                        'total_gallons' => (int) $group->sum('gallon_qty'),
+                        'order_count' => (int) $group->count(),
+                    ];
+                })
+                ->sortByDesc('total_spent')
+                ->take(5)
+                ->values();
 
             return response()->json([
                 'success' => true,
+                'period_label' => $periodLabel,
+                'month' => $month,
+                'year' => $year,
+                'years' => $years,
                 'summary' => [
-                    'this_month_revenue'  => $thisMonthRevenue,
-                    'last_month_revenue'  => $lastMonthRevenue,
-                    'this_month_gallons'  => $thisMonthGallons,
-                    'last_month_gallons'  => $lastMonthGallons,
-                    'this_month_orders'   => $thisMonthOrders,
-                    'last_month_orders'   => $lastMonthOrders,
-                    'online_orders'       => $onlineCount,
-                    'kasir_orders'        => $kasirCount,
+                    'total_revenue' => $totalRevenue,
+                    'last_revenue' => $lastRevenue,
+                    'total_gallons' => $totalGallons,
+                    'last_gallons' => $lastGallons,
+                    'total_orders' => $totalOrders,
+                    'last_orders' => $lastOrdersCount,
+                    'online_orders' => $onlineCount,
+                    'kasir_orders' => $kasirCount,
+                    'avg_order' => $avgOrder,
                 ],
-                'daily_trend'   => $dailyTrend,
+                'orders' => $orderList,
                 'top_customers' => $topCustomers,
             ]);
         } catch (\Exception $e) {

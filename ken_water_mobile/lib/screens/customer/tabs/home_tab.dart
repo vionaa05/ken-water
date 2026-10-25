@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:open_file/open_file.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
@@ -16,6 +17,7 @@ import '../../login_screen.dart';
 import '../customer_main_screen.dart';
 import '../notifications_screen.dart';
 import '../vouchers_screen.dart';
+import 'order_tab.dart';
 
 class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
@@ -103,9 +105,25 @@ class _HomeTabState extends State<HomeTab> {
       if (byteData == null) throw Exception('Gagal mengkonversi gambar');
 
       final bytes = byteData.buffer.asUint8List();
-      final dir = await getApplicationDocumentsDirectory();
       final fileName =
           'kartu_member_ken_water_${DateTime.now().millisecondsSinceEpoch}.png';
+
+      // Simpan langsung ke Galeri Foto HP
+      bool savedToGallery = false;
+      if (Platform.isAndroid) {
+        try {
+          const channel = MethodChannel('com.kenwater.ken_water_mobile/media');
+          await channel.invokeMethod('saveImageToGallery', {
+            'bytes': bytes,
+            'filename': fileName,
+          });
+          savedToGallery = true;
+        } catch (e) {
+          debugPrint('MediaStore save error: $e');
+        }
+      }
+
+      final dir = await getApplicationDocumentsDirectory();
       final file = File('${dir.path}/$fileName');
       await file.writeAsBytes(bytes);
 
@@ -114,14 +132,24 @@ class _HomeTabState extends State<HomeTab> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
+                const Icon(Icons.photo_library_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Kartu berhasil diunduh!\n${file.path}',
-                    style: const TextStyle(fontSize: 12),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Kartu Berhasil Disimpan!',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Text(
+                        savedToGallery
+                            ? 'Tersimpan ke Galeri HP (Pictures/Ken Water)'
+                            : 'Tersimpan ke Dokumen: $fileName',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1082,10 +1110,9 @@ class _HomeTabState extends State<HomeTab> {
                               : 'Diskon ${NumberFormat.currency(locale: "id_ID", symbol: "Rp ", decimalDigits: 0).format(val)}';
                           return Container(
                             margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF7C3AED), Color(0xFF9F67FA)],
+                                colors: [Color(0xFF7C3AED), Color(0xFF9333EA)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -1098,58 +1125,133 @@ class _HomeTabState extends State<HomeTab> {
                                 ),
                               ],
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(Icons.local_offer_rounded,
-                                      color: Colors.white, size: 22),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(14),
+                                onTap: () {
+                                  OrderTab.pendingPromoToSelect = promo;
+                                  context
+                                      .findAncestorStateOfType<
+                                          CustomerMainScreenState>()
+                                      ?.switchTab(1);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Promo "${promo['name']}" berhasil dipilih untuk pemesanan!'),
+                                      backgroundColor:
+                                          const Color(0xFF7C3AED),
+                                      behavior: SnackBarBehavior.floating,
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(promo['name'] ?? 'Promo Spesial',
-                                          style: GoogleFonts.inter(
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: const Icon(
+                                                Icons.stars_rounded,
+                                                color: Colors.white,
+                                                size: 24),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    promo['name'] ??
+                                                        'Promo Spesial',
+                                                    style: GoogleFonts.inter(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 14),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis),
+                                                if ((promo['description'] ??
+                                                        '')
+                                                    .toString()
+                                                    .isNotEmpty)
+                                                  Text(promo['description'],
+                                                      style: GoogleFonts.inter(
+                                                          color: Colors.white70,
+                                                          fontSize: 11),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow
+                                                          .ellipsis),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                    'Berlaku s/d ${promo['valid_until'] ?? '-'}',
+                                                    style: GoogleFonts.inter(
+                                                        color: Colors.white60,
+                                                        fontSize: 11)),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 6),
+                                            decoration: BoxDecoration(
                                               color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis),
-                                      if ((promo['description'] ?? '').toString().isNotEmpty)
-                                        Text(promo['description'],
-                                            style: GoogleFonts.inter(
-                                                color: Colors.white70,
-                                                fontSize: 11),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis),
-                                      const SizedBox(height: 4),
-                                      Text('Berlaku s/d ${promo['valid_until'] ?? '-'}',
-                                          style: GoogleFonts.inter(
-                                              color: Colors.white60, fontSize: 11)),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(discountText,
+                                                style: GoogleFonts.inter(
+                                                    color:
+                                                        const Color(0xFF7C3AED),
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12)),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              'Gunakan untuk Pesan Galon',
+                                              style: GoogleFonts.inter(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            const Icon(
+                                                Icons.arrow_forward_rounded,
+                                                color: Colors.white,
+                                                size: 14),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(discountText,
-                                      style: GoogleFonts.inter(
-                                          color: const Color(0xFF7C3AED),
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12)),
-                                ),
-                              ],
+                              ),
                             ),
                           );
                         }),

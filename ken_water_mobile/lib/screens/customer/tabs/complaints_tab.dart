@@ -32,10 +32,26 @@ class _ComplaintsTabState extends State<ComplaintsTab> {
   }
 
   void _showNewComplaintSheet() {
-    final subjectController = TextEditingController();
     final descController = TextEditingController();
     final formKey = GlobalKey<FormState>();
     bool isSubmitting = false;
+    String? selectedCategory;
+
+    final categories = [
+      'Kualitas Air',
+      'Kondisi Galon',
+      'Pengiriman',
+      'Layanan Kasir / Kurir',
+      'Lainnya',
+    ];
+
+    final categoryDescriptions = {
+      'Kualitas Air': 'Rasa, Bau, Kejernihan',
+      'Kondisi Galon': 'Bocor, Kotor, Tutup Rusak',
+      'Pengiriman': 'Terlambat, Salah Alamat/Jadwal',
+      'Layanan Kasir / Kurir': 'Pelayanan Staff / Kurir',
+      'Lainnya': 'Kendala lainnya',
+    };
 
     showModalBottomSheet(
       context: context,
@@ -55,91 +71,110 @@ class _ComplaintsTabState extends State<ComplaintsTab> {
           ),
           child: Form(
             key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8F0),
-                      borderRadius: BorderRadius.circular(2),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Text('Ajukan Keluhan',
-                    style: GoogleFonts.inter(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text('Kami akan segera menindaklanjuti keluhan Anda',
-                    style: GoogleFonts.inter(
-                        fontSize: 13, color: AppColors.textSecondary)),
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: subjectController,
-                  decoration: InputDecoration(
-                    labelText: 'Subjek Keluhan',
-                    hintText: 'Contoh: Air berbau, Galon bocor...',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    prefixIcon:
-                        const Icon(Icons.subject, color: AppColors.primary),
-                    filled: true,
-                    fillColor: AppColors.surfaceMuted,
-                  ),
-                  validator: (v) =>
-                      v!.isEmpty ? 'Subjek wajib diisi' : null,
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: descController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    labelText: 'Deskripsi Keluhan',
-                    hintText: 'Jelaskan masalah yang Anda alami secara detail...',
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(bottom: 64),
-                      child: Icon(Icons.description_outlined,
-                          color: AppColors.primary),
+                  const SizedBox(height: 20),
+                  Text('Ajukan Keluhan',
+                      style: GoogleFonts.inter(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('Kami akan segera menindaklanjuti keluhan Anda',
+                      style: GoogleFonts.inter(
+                          fontSize: 13, color: AppColors.textSecondary)),
+                  const SizedBox(height: 20),
+                  // Dropdown Kategori Keluhan (sama seperti web)
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    decoration: InputDecoration(
+                      labelText: 'Kategori Kendala *',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      prefixIcon:
+                          const Icon(Icons.category_rounded, color: AppColors.primary),
+                      filled: true,
+                      fillColor: AppColors.surfaceMuted,
                     ),
-                    alignLabelWithHint: true,
-                    filled: true,
-                    fillColor: AppColors.surfaceMuted,
+                    items: categories.map((cat) {
+                      return DropdownMenuItem<String>(
+                        value: cat,
+                        child: Text(
+                          '$cat (${categoryDescriptions[cat]})',
+                          style: GoogleFonts.inter(fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      setSheet(() => selectedCategory = val);
+                    },
+                    validator: (v) =>
+                        v == null || v.isEmpty ? 'Pilih kategori kendala' : null,
+                    hint: Text('-- Pilih Kategori Kendala --',
+                        style: GoogleFonts.inter(
+                            fontSize: 13, color: AppColors.textMuted)),
+                    isExpanded: true,
                   ),
-                  validator: (v) =>
-                      v!.length < 10 ? 'Deskripsi minimal 10 karakter' : null,
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: isSubmitting
-                        ? null
-                        : () async {
-                            if (!formKey.currentState!.validate()) return;
-                            setSheet(() => isSubmitting = true);
-                            final result = await ApiService.createComplaint(
-                              subject: subjectController.text,
-                              description: descController.text,
-                            );
-                            setSheet(() => isSubmitting = false);
-                            if (!mounted) return;
-                            Navigator.pop(ctx);
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(result['message'] ?? ''),
-                              backgroundColor: result['success'] == true
-                                  ? AppColors.success
-                                  : AppColors.error,
-                              behavior: SnackBarBehavior.floating,
-                            ));
-                            if (result['success'] == true) _loadComplaints();
-                          },
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: descController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      labelText: 'Detail Keluhan *',
+                      hintText: 'Jelaskan secara singkat kendala yang Anda alami\n(misal: nomor pesanan, waktu kejadian, dll)',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      prefixIcon: const Padding(
+                        padding: EdgeInsets.only(bottom: 64),
+                        child: Icon(Icons.description_outlined,
+                            color: AppColors.primary),
+                      ),
+                      alignLabelWithHint: true,
+                      filled: true,
+                      fillColor: AppColors.surfaceMuted,
+                    ),
+                    validator: (v) =>
+                        v!.length < 10 ? 'Deskripsi minimal 10 karakter' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setSheet(() => isSubmitting = true);
+                              final result = await ApiService.createComplaint(
+                                subject: selectedCategory!,
+                                description: descController.text,
+                                category: selectedCategory,
+                              );
+                              setSheet(() => isSubmitting = false);
+                              if (!mounted) return;
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(result['message'] ?? ''),
+                                backgroundColor: result['success'] == true
+                                    ? AppColors.success
+                                    : AppColors.error,
+                                behavior: SnackBarBehavior.floating,
+                              ));
+                              if (result['success'] == true) _loadComplaints();
+                            },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
@@ -160,8 +195,9 @@ class _ComplaintsTabState extends State<ComplaintsTab> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Color _getStatusColor(String status) {
     switch (status) {

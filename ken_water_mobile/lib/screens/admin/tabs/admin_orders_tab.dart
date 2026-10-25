@@ -6,13 +6,17 @@ import '../../../models/order_model.dart';
 import '../../../services/api_service.dart';
 
 class AdminOrdersTab extends StatefulWidget {
-  const AdminOrdersTab({super.key});
+  static final GlobalKey<AdminOrdersTabState> globalKey = GlobalKey<AdminOrdersTabState>();
+
+  AdminOrdersTab({super.key});
 
   @override
-  State<AdminOrdersTab> createState() => _AdminOrdersTabState();
+  AdminOrdersTabState createState() => AdminOrdersTabState();
 }
 
-class _AdminOrdersTabState extends State<AdminOrdersTab> {
+class AdminOrdersTabState extends State<AdminOrdersTab> {
+  void reloadOrders() => _loadOrders();
+
   List<OrderModel> _allOrders = [];
   Map<String, dynamic> _statusCounts = {};
   bool _isLoading = true;

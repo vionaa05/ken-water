@@ -8,6 +8,7 @@ import '../../../services/api_service.dart';
 import '../../login_screen.dart';
 import '../admin_campaigns_screen.dart';
 import '../admin_reports_screen.dart';
+import 'admin_orders_tab.dart';
 
 class AdminHomeTab extends StatefulWidget {
   const AdminHomeTab({super.key});
@@ -361,7 +362,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             ),
                             const SizedBox(width: 12),
                             const Text(
-                              'Kasir Depo Air',
+                              'Kasir Depot Air',
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -534,38 +535,53 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
 
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: foundCustomer == null
-                          ? null
-                          : () async {
-                              final qty = int.tryParse(qtyController.text) ?? 1;
-                              Navigator.pop(ctx);
+                      onPressed: () async {
+                        if (foundCustomer == null) {
+                          final query = customerIdController.text.trim();
+                          if (query.isEmpty) {
+                            setModalState(() {
+                              searchError = 'Silakan masukkan ID, No. HP, atau Nama pelanggan terlebih dahulu.';
+                            });
+                            return;
+                          }
+                          await searchCustomer();
+                          if (foundCustomer == null) return;
+                        }
 
-                              final res = await ApiService.adminCreateTransaction(
-                                customerId: foundCustomer!.customerId,
-                                gallonQty: qty,
-                                paymentMethod: paymentMethod,
-                              );
+                        final qty = int.tryParse(qtyController.text) ?? 1;
+                        Navigator.pop(ctx);
 
-                              if (!mounted) return;
-                              if (res['success'] == true) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Transaksi Berhasil! ${res['message']}'),
-                                    backgroundColor: AppColors.success,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                                _loadDashboard();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(res['message'] ?? 'Gagal membuat transaksi'),
-                                    backgroundColor: AppColors.error,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              }
-                            },
+                        final targetId = foundCustomer!.customerId.isNotEmpty
+                            ? foundCustomer!.customerId
+                            : foundCustomer!.id.toString();
+
+                        final res = await ApiService.adminCreateTransaction(
+                          customerId: targetId,
+                          gallonQty: qty,
+                          paymentMethod: paymentMethod,
+                        );
+
+                        if (!mounted) return;
+                        if (res['success'] == true) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Transaksi Berhasil! ${res['message']}'),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          _loadDashboard();
+                          AdminOrdersTab.globalKey.currentState?.reloadOrders();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(res['message'] ?? 'Gagal membuat transaksi'),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -624,16 +640,6 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.bar_chart_rounded, color: AppColors.textSecondary),
-            tooltip: 'Laporan & Statistik',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminReportsScreen()),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
             tooltip: 'Pengaturan Sistem',
             onPressed: _showSettingsDialog,
@@ -655,7 +661,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.point_of_sale, color: Colors.white),
         label: const Text(
-          'Kasir Depo',
+          'Kasir Depot',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),

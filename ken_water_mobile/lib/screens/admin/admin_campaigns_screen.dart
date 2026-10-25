@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../constants/app_colors.dart';
 import '../../services/api_service.dart';
+import 'admin_campaign_detail_screen.dart';
 
 class AdminCampaignsScreen extends StatefulWidget {
   const AdminCampaignsScreen({super.key});
@@ -430,6 +431,8 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                               }
 
                               setModalState(() => isSubmitting = true);
+                              final messenger = ScaffoldMessenger.of(context);
+                              final nav = Navigator.of(ctx);
                               final res = await ApiService.adminCreateCampaign(
                                 name: name,
                                 type: selectedType,
@@ -443,8 +446,8 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
 
                               if (!mounted) return;
                               if (res['success'] == true) {
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                nav.pop();
+                                messenger.showSnackBar(
                                   SnackBar(
                                     content: Text(res['message'] ?? 'Kampanye WhatsApp berhasil dibuat!'),
                                     backgroundColor: AppColors.success,
@@ -453,7 +456,7 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                                 );
                                 _loadData();
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   SnackBar(
                                     content: Text(res['message'] ?? 'Gagal membuat kampanye'),
                                     backgroundColor: AppColors.error,
@@ -770,13 +773,17 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                                         children: [
                                           const Icon(Icons.people_outline, size: 16, color: AppColors.textSecondary),
                                           const SizedBox(width: 6),
-                                          Text(
-                                            'Target: $targetCount pelanggan',
-                                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                                          Flexible(
+                                            child: Text(
+                                              'Target: $targetCount pelanggan',
+                                              style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
+                                    const SizedBox(width: 8),
                                     Row(
                                       children: [
                                         const Icon(Icons.send_outlined, size: 14, color: AppColors.textMuted),
@@ -797,8 +804,13 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                                   children: [
                                     const Icon(Icons.confirmation_number_outlined, size: 14, color: AppColors.primary),
                                     const SizedBox(width: 6),
-                                    Text('Voucher: $voucherName',
-                                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500)),
+                                    Expanded(
+                                      child: Text(
+                                        'Voucher: $voucherName',
+                                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -819,13 +831,17 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                                     fontSize: 12,
                                     fontStyle: FontStyle.italic,
                                     color: AppColors.textSecondary,
+                                    height: 1.35,
                                   ),
                                 ),
                               ),
 
                               const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Wrap(
+                                alignment: WrapAlignment.spaceBetween,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 4,
                                 children: [
                                   Text(
                                     'Periode: $periodStart - $periodEnd',
@@ -836,6 +852,43 @@ class _AdminCampaignsScreenState extends State<AdminCampaignsScreen> {
                                     style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    final updated = await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AdminCampaignDetailScreen(
+                                          campaignId: id,
+                                          campaignName: name,
+                                        ),
+                                      ),
+                                    );
+                                    if (updated == true || mounted) {
+                                      _loadData();
+                                    }
+                                  },
+                                  icon: const Icon(Icons.send_rounded, size: 16),
+                                  label: Text(
+                                    'Lihat Target & Kirim WA ➔',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF16A34A),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                ),
                               ),
                             ],
                           ),

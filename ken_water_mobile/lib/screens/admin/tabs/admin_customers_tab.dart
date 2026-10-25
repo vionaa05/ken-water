@@ -1,4 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:open_file/open_file.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../constants/app_colors.dart';
 import '../../../services/api_service.dart';
 
@@ -154,6 +162,22 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
 
               const SizedBox(height: 20),
               ElevatedButton.icon(
+                icon: const Icon(Icons.credit_card_rounded),
+                label: const Text('Kartu Member Loyalitas', style: TextStyle(fontWeight: FontWeight.bold)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showCustomerMemberCardDialog(c);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0284C7),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
                 icon: const Icon(Icons.point_of_sale),
                 label: const Text('Input Transaksi Kasir untuk Member Ini'),
                 onPressed: () {
@@ -259,6 +283,405 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
         );
       }
     }
+  }
+
+  List<Color> _getTierGradient(String level) {
+    switch (level.toLowerCase()) {
+      case 'gold':
+        return const [Color(0xFF78350F), Color(0xFFD97706), Color(0xFFF59E0B)];
+      case 'silver':
+        return const [Color(0xFF1E3A5F), Color(0xFF334155), Color(0xFF64748B)];
+      case 'bronze':
+      default:
+        return const [Color(0xFF0284C7), Color(0xFF0369A1), Color(0xFF0C4A6E)];
+    }
+  }
+
+  String _getTierEmoji(String level) {
+    switch (level.toLowerCase()) {
+      case 'gold':
+        return '🥇';
+      case 'silver':
+        return '🥈';
+      default:
+        return '🥉';
+    }
+  }
+
+  void _showCustomerMemberCardDialog(Map<String, dynamic> c) {
+    final name = c['name'] ?? 'Pelanggan';
+    final customerId = c['customer_id'] ?? '-';
+    final level = (c['loyalty_level'] ?? 'bronze').toString().toLowerCase();
+    final points = c['points'] ?? 0;
+    final status = (c['status'] ?? 'aktif').toString().toLowerCase();
+    final cardRepaintKey = GlobalKey();
+    bool isDownloading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetCtx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Kartu Member Digital',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                          onPressed: () => Navigator.pop(sheetCtx),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // KARTU MEMBER (IDENTIK DENGAN CUSTOMER MOBILE)
+                    RepaintBoundary(
+                      key: cardRepaintKey,
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: _getTierGradient(level),
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getTierGradient(level)[0].withOpacity(0.4),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -20,
+                              top: -20,
+                              child: Container(
+                                width: 120,
+                                height: 120,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.08),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 30,
+                              bottom: -30,
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withOpacity(0.06),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.water_drop, color: Colors.white70, size: 18),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Ken Water',
+                                            style: GoogleFonts.inter(
+                                              color: Colors.white70,
+                                              fontSize: 13,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          '${_getTierEmoji(level)} ${level.toUpperCase()}',
+                                          style: GoogleFonts.inter(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              name,
+                                              style: GoogleFonts.inter(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              customerId,
+                                              style: GoogleFonts.inter(
+                                                color: Colors.white70,
+                                                fontSize: 12,
+                                                letterSpacing: 1.2,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.stars_rounded, color: Colors.white, size: 18),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '$points Poin',
+                                                  style: GoogleFonts.inter(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 16,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: status == 'aktif'
+                                                    ? Colors.greenAccent.withOpacity(0.25)
+                                                    : Colors.redAccent.withOpacity(0.25),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                status == 'aktif' ? '● Aktif' : '● Tidak Aktif',
+                                                style: GoogleFonts.inter(
+                                                  color: status == 'aktif' ? Colors.greenAccent : Colors.redAccent,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: QrImageView(
+                                          data: customerId,
+                                          version: QrVersions.auto,
+                                          size: 70,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Tombol Unduh Gambar Kartu (PNG)
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        icon: isDownloading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Icon(Icons.download_rounded),
+                        label: Text(
+                          isDownloading ? 'Menyimpan Kartu...' : 'Unduh Gambar Kartu (PNG)',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        onPressed: isDownloading
+                            ? null
+                            : () async {
+                                setSheetState(() => isDownloading = true);
+                                try {
+                                  // Beri jeda kecil agar frame ter-paint sempurna bila baru dibuka
+                                  await Future.delayed(const Duration(milliseconds: 100));
+
+                                  final renderObj = cardRepaintKey.currentContext?.findRenderObject();
+                                  if (renderObj == null || renderObj is! RenderRepaintBoundary) {
+                                    throw Exception('Elemen kartu belum siap dirender. Silakan coba lagi.');
+                                  }
+
+                                  // Jika boundary masih butuh paint, tunggu frame berikutnya
+                                  if (renderObj.debugNeedsPaint) {
+                                    await Future.delayed(const Duration(milliseconds: 100));
+                                  }
+
+                                  final image = await renderObj.toImage(pixelRatio: 3.0);
+                                  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                                  if (byteData == null) {
+                                    throw Exception('Gagal memproses gambar kartu');
+                                  }
+
+                                  final bytes = byteData.buffer.asUint8List();
+                                  final cleanId = customerId.toString().replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+                                  final fileName = 'kartu_member_${cleanId}_${DateTime.now().millisecondsSinceEpoch}.png';
+
+                                  // Simpan langsung ke Galeri / MediaStore perangkat
+                                  bool savedToGallery = false;
+                                  if (Platform.isAndroid) {
+                                    try {
+                                      const channel = MethodChannel('com.kenwater.ken_water_mobile/media');
+                                      await channel.invokeMethod('saveImageToGallery', {
+                                        'bytes': bytes,
+                                        'filename': fileName,
+                                      });
+                                      savedToGallery = true;
+                                    } catch (e) {
+                                      debugPrint('MediaStore save error: $e');
+                                    }
+                                  }
+
+                                  // Simpan file lokal untuk akses langsung via OpenFile
+                                  final dir = await getApplicationDocumentsDirectory();
+                                  final file = File('${dir.path}/$fileName');
+                                  await file.writeAsBytes(bytes);
+
+                                  // Tampilkan notifikasi di layar
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Row(
+                                          children: [
+                                            const Icon(Icons.photo_library_rounded, color: Colors.white, size: 22),
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  const Text(
+                                                    'Kartu Berhasil Disimpan!',
+                                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                                  ),
+                                                  Text(
+                                                    savedToGallery
+                                                        ? 'Tersimpan ke Galeri HP (Pictures/Ken Water)'
+                                                        : 'Tersimpan ke Dokumen: $fileName',
+                                                    style: const TextStyle(fontSize: 11),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        backgroundColor: AppColors.success,
+                                        behavior: SnackBarBehavior.floating,
+                                        duration: const Duration(seconds: 4),
+                                        action: SnackBarAction(
+                                          label: 'Buka',
+                                          textColor: Colors.white,
+                                          onPressed: () => OpenFile.open(file.path),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  // Buka gambar kartu secara otomatis
+                                  await OpenFile.open(file.path);
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Gagal menyimpan kartu: $e'),
+                                        backgroundColor: AppColors.error,
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (sheetCtx.mounted) {
+                                    setSheetState(() => isDownloading = false);
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showAddCustomerDialog() {
@@ -1130,7 +1553,7 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Klasifikasi perilaku & nilai pelanggan depo',
+                        'Klasifikasi perilaku & nilai pelanggan depot',
                         style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],

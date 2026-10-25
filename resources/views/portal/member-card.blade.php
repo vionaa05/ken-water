@@ -21,40 +21,52 @@
 <!-- Digital Card -->
 <div class="flex justify-center mb-8">
     <div class="relative w-full max-w-sm aspect-[1.586/1] rounded-2xl shadow-xl overflow-hidden p-6 flex flex-col justify-between
-        @if($user->loyalty_level === 'bronze') bg-gradient-to-br from-[#e6aa68] to-[#9b5b14] text-white
-        @elseif($user->loyalty_level === 'silver') bg-gradient-to-br from-gray-300 to-gray-500 text-gray-900
-        @else bg-gradient-to-br from-yellow-300 to-yellow-600 text-yellow-950
+        @if($user->loyalty_level === 'gold') bg-gradient-to-br from-[#78350f] via-[#d97706] to-[#f59e0b] text-white
+        @elseif($user->loyalty_level === 'silver') bg-gradient-to-br from-[#1e3a5f] via-[#334155] to-[#64748b] text-white
+        @else bg-gradient-to-br from-[#0284c7] via-[#0369a1] to-[#0c4a6e] text-white
         @endif">
         
         <!-- Decoration -->
-        <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white opacity-10"></div>
-        <div class="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-black opacity-10"></div>
+        <div class="absolute -top-5 -right-5 w-28 h-28 rounded-full bg-white opacity-10 pointer-events-none"></div>
+        <div class="absolute -bottom-6 -right-2 w-20 h-20 rounded-full bg-white opacity-5 pointer-events-none"></div>
         
         <!-- Top row: Logo & Level -->
         <div class="flex justify-between items-start relative z-10">
             <div class="flex items-center gap-2">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                <span class="font-bold text-lg tracking-wider">Ken Water</span>
+                <svg class="w-6 h-6 text-white/80" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                <span class="font-bold text-base tracking-wider text-white/90">Ken Water</span>
             </div>
-            <div class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/30">
-                {{ $user->loyalty_level }}
+            <div class="px-3 py-1 bg-white/20 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-sm border border-white/30 text-white">
+                {{ $user->loyalty_level === 'gold' ? '🥇' : ($user->loyalty_level === 'silver' ? '🥈' : '🥉') }} {{ strtoupper($user->loyalty_level) }}
             </div>
         </div>
         
         <!-- Bottom row: Name & ID -->
         <div class="relative z-10 flex justify-between items-end">
             <div>
-                <p class="text-xs opacity-80 mb-1">MEMBER NAME</p>
-                <p class="font-bold text-xl uppercase tracking-widest">{{ $user->name }}</p>
-                <p class="font-mono mt-1 opacity-90 text-sm tracking-[0.2em]">{{ chunk_split($user->customer_id, 4, ' ') }}</p>
+                <p class="font-bold text-lg text-white leading-tight">{{ $user->name }}</p>
+                <p class="font-mono mt-0.5 text-xs text-white/70 tracking-widest">{{ $user->customer_id }}</p>
+                <p class="mt-2 text-sm font-bold text-white flex items-center gap-1">
+                    <svg class="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    {{ $user->points }} Poin
+                </p>
+                <div class="mt-1">
+                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold {{ ($user->status ?? 'aktif') === 'aktif' ? 'bg-emerald-400/25 text-emerald-200' : 'bg-red-400/25 text-red-200' }}">
+                        {{ ($user->status ?? 'aktif') === 'aktif' ? '● Aktif' : '● Tidak Aktif' }}
+                    </span>
+                </div>
             </div>
             
-            <!-- QR Code (Placeholder visually, use JS library if needed) -->
-            <div class="w-16 h-16 bg-white rounded p-1" id="qrcode-container">
+            <!-- QR Code -->
+            <div class="w-16 h-16 bg-white rounded-lg p-1.5 shadow-sm shrink-0 flex items-center justify-center" id="qrcode-container">
+                @if(isset($qrBase64) && $qrBase64)
+                <img src="{{ $qrBase64 }}" alt="QR" class="w-full h-full object-contain">
+                @else
                 <!-- Fallback if JS fails -->
-                <div class="w-full h-full border-2 border-dashed border-gray-300 flex items-center justify-center text-[8px] text-gray-400 text-center leading-none">
+                <div class="w-full h-full border border-dashed border-gray-300 flex items-center justify-center text-[8px] text-gray-400 text-center leading-none">
                     QR CODE
                 </div>
+                @endif
             </div>
         </div>
     </div>

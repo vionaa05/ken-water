@@ -102,12 +102,20 @@ class CustomerApiController extends Controller
             'payment_method' => 'required|in:tunai,transfer',
             'notes' => 'nullable|string|max:500',
             'voucher_id' => 'nullable|integer',
+            'promo_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        if ($request->filled('voucher_id') && $request->filled('promo_id')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya bisa menggunakan 1 jenis diskon (Voucher ATAU Promo Personal).',
             ], 422);
         }
 
@@ -139,6 +147,27 @@ class CustomerApiController extends Controller
             }
         }
 
+        $promo = null;
+        if ($request->filled('promo_id')) {
+            $promo = PersonalPromo::where('id', $request->promo_id)
+                ->where('user_id', $user->id)
+                ->where('is_used', false)
+                ->first();
+
+            if (!$promo || !$promo->isActive()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Promo personal tidak valid atau sudah kedaluwarsa.',
+                ], 422);
+            }
+
+            if ($promo->discount_type === 'nominal') {
+                $discount = min($promo->discount_value, $subtotal);
+            } else {
+                $discount = round($subtotal * ($promo->discount_value / 100));
+            }
+        }
+
         $totalPrice = max(0, $subtotal - $discount);
 
         $order = Order::create([
@@ -163,6 +192,10 @@ class CustomerApiController extends Controller
                 'order_id' => $order->id,
             ]);
             $userVoucher->voucher->increment('used_count');
+        }
+
+        if ($promo) {
+            $promo->update(['is_used' => true]);
         }
 
         return response()->json([
@@ -636,6 +669,8 @@ class CustomerApiController extends Controller
             $today = Carbon::today();
 
             $promos = PersonalPromo::where('user_id', $user->id)
+                ->where('is_used', false)
+                ->where('is_expired', false)
                 ->where('valid_from', '<=', $today->copy()->endOfDay())
                 ->where('valid_until', '>=', $today->copy()->startOfDay())
                 ->get()

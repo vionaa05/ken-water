@@ -12,36 +12,114 @@
             <p class="text-sm font-mono text-gray-400">{{ $customer->customer_id }}</p>
         </div>
         <div class="flex gap-2 flex-wrap">
-            <a href="{{ route('admin.customers.print-card', $customer) }}" class="btn-secondary py-2 px-3 text-sm">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Cetak Kartu
-            </a>
             <a href="{{ route('admin.customers.edit', $customer) }}" class="btn-secondary py-2 px-3 text-sm">Edit Data</a>
         </div>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-    <!-- Profile Card -->
-    <div class="card p-6">
-        <div class="flex flex-col items-center text-center mb-6">
-            <div class="w-20 h-20 rounded-full flex items-center justify-center text-white font-bold text-3xl mb-4
-                @if($customer->loyalty_level === 'gold') bg-yellow-500
-                @elseif($customer->loyalty_level === 'silver') bg-gray-400
-                @else bg-orange-400 @endif">
-                {{ strtoupper(substr($customer->name, 0, 1)) }}
+    <!-- Profile Card with Loyalty Card -->
+    <div class="card p-5">
+        <!-- Physical-style Loyalty Card (Sama Persis dengan Mobile) -->
+        <div class="mb-5">
+            @php
+                $cardLevel = $customer->loyalty_level;
+                if ($cardLevel === 'gold') {
+                    $gradFrom = '#78350f'; $gradVia = '#d97706'; $gradTo = '#f59e0b';
+                    $levelEmoji = '🥇';
+                } elseif ($cardLevel === 'silver') {
+                    $gradFrom = '#1e3a5f'; $gradVia = '#334155'; $gradTo = '#64748b';
+                    $levelEmoji = '🥈';
+                } else {
+                    $gradFrom = '#0284c7'; $gradVia = '#0369a1'; $gradTo = '#0c4a6e';
+                    $levelEmoji = '🥉';
+                }
+                $statusBg = $customer->status === 'aktif' ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)';
+                $statusColor = $customer->status === 'aktif' ? '#6ee7b7' : '#fca5a5';
+                $statusText = $customer->status === 'aktif' ? '● Aktif' : '● Tidak Aktif';
+            @endphp
+
+            <!-- Card preview (tampilan di halaman) -->
+            <div id="loyalty-card-wrapper"
+                style="
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 1.586 / 1;
+                    border-radius: 1rem;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+                    overflow: hidden;
+                    padding: 1.25rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    background: linear-gradient(135deg, {{ $gradFrom }} 0%, {{ $gradVia }} 50%, {{ $gradTo }} 100%);
+                    color: white;
+                    font-family: 'Inter', sans-serif;
+                    box-sizing: border-box;
+                ">
+
+                <!-- Decorative Circles -->
+                <div style="position:absolute; top:-1.25rem; right:-1.25rem; width:7rem; height:7rem; border-radius:50%; background:rgba(255,255,255,0.10); pointer-events:none;"></div>
+                <div style="position:absolute; bottom:-1.5rem; right:-0.5rem; width:5rem; height:5rem; border-radius:50%; background:rgba(255,255,255,0.05); pointer-events:none;"></div>
+
+                <!-- Top Row: Logo & Level -->
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:10;">
+                    <div style="display:flex; align-items:center; gap:0.375rem;">
+                        <svg width="20" height="20" fill="rgba(255,255,255,0.85)" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        <span style="font-weight:700; font-size:0.875rem; letter-spacing:0.05em; color:rgba(255,255,255,0.92);">Ken Water</span>
+                    </div>
+                    <div style="padding:0.25rem 0.625rem; background:rgba(255,255,255,0.20); border-radius:9999px; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; border:1px solid rgba(255,255,255,0.30); color:white;">
+                        {{ $levelEmoji }} {{ strtoupper($cardLevel) }}
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Name, ID, Poin, Status, QR -->
+                <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:flex-end;">
+                    <div style="min-width:0; padding-right:0.5rem; flex:1;">
+                        <p style="font-weight:700; font-size:1rem; color:white; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ $customer->name }}</p>
+                        <p style="font-family:monospace; margin-top:0.125rem; font-size:0.7rem; color:rgba(255,255,255,0.70); letter-spacing:0.15em;">{{ $customer->customer_id }}</p>
+                        <p style="margin-top:0.5rem; font-size:0.875rem; font-weight:700; color:white; display:flex; align-items:center; gap:0.25rem;">
+                            <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            {{ (int)$customer->points }} Poin
+                        </p>
+                        <div style="margin-top:0.25rem;">
+                            <span style="display:inline-block; padding:0.125rem 0.5rem; border-radius:0.25rem; font-size:0.6875rem; font-weight:600; background:{{ $statusBg }}; color:{{ $statusColor }};">
+                                {{ $statusText }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div style="width:3.5rem; height:3.5rem; background:white; border-radius:0.5rem; padding:0.25rem; box-shadow:0 1px 4px rgba(0,0,0,0.15); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        @if(isset($qrBase64) && $qrBase64)
+                        <img src="{{ $qrBase64 }}" alt="QR" style="width:100%; height:100%; object-fit:contain;" crossorigin="anonymous">
+                        @else
+                        <span style="font-size:0.5rem; color:#9ca3af; font-family:monospace; text-align:center;">QR</span>
+                        @endif
+                    </div>
+                </div>
             </div>
-            <h3 class="font-bold text-lg text-gray-900">{{ $customer->name }}</h3>
-            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase mt-2
-                @if($customer->loyalty_level === 'gold') bg-yellow-100 text-yellow-800
-                @elseif($customer->loyalty_level === 'silver') bg-gray-100 text-gray-700
-                @else bg-orange-100 text-orange-800 @endif">
-                {{ $customer->loyalty_level }}
-            </span>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-2
-                {{ $customer->status === 'aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                {{ $customer->status_label }}
-            </span>
+
+            <!-- Hidden data for canvas drawing -->
+            <span id="card-data"
+                data-level="{{ $cardLevel }}"
+                data-grad-from="{{ $gradFrom }}"
+                data-grad-via="{{ $gradVia }}"
+                data-grad-to="{{ $gradTo }}"
+                data-name="{{ $customer->name }}"
+                data-id="{{ $customer->customer_id }}"
+                data-points="{{ (int)$customer->points }}"
+                data-status="{{ $customer->status }}"
+                data-emoji="{{ $levelEmoji }}"
+                data-qr="{{ isset($qrBase64) && $qrBase64 ? $qrBase64 : '' }}"
+                style="display:none;"
+            ></span>
+
+            <!-- Tombol Unduh Gambar Kartu (PNG) -->
+            <button type="button" id="btn-download-card" onclick="downloadLoyaltyCardPng()" style="width:100%; margin-top:0.75rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; padding:0.625rem 1rem; border-radius:0.75rem; border:1px solid #bfdbfe; background:rgba(239,246,255,0.7); color:#1d4ed8; font-size:0.875rem; font-weight:600; cursor:pointer; transition:background 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.08);" onmouseover="this.style.background='rgba(219,234,254,0.9)'" onmouseout="this.style.background='rgba(239,246,255,0.7)'">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>Unduh Gambar Kartu (PNG)</span>
+            </button>
         </div>
 
         <div class="space-y-3 text-sm">
@@ -240,3 +318,221 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+async function downloadLoyaltyCardPng() {
+    const btn = document.getElementById('btn-download-card');
+    const dataEl = document.getElementById('card-data');
+    if (!dataEl) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = '<svg style="animation:spin 1s linear infinite;margin-right:6px;" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12a8 8 0 018-8v8H4z" fill="currentColor"/></svg> Memproses...';
+    btn.disabled = true;
+
+    try {
+        // Card dimensions (credit card ratio 1.586:1)
+        const W = 1024, H = Math.round(1024 / 1.586);
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        const data = dataEl.dataset;
+        const level = data.level;
+        const gradFrom = data.gradFrom;
+        const gradVia  = data.gradVia;
+        const gradTo   = data.gradTo;
+        const name     = data.name;
+        const custId   = data.id;
+        const points   = parseInt(data.points);
+        const status   = data.status;
+        const emoji    = data.emoji;
+        const qrSrc    = data.qr;
+
+        const pad = W * 0.05; // 5% padding
+
+        // --- Background gradient ---
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0,    gradFrom);
+        grad.addColorStop(0.5,  gradVia);
+        grad.addColorStop(1,    gradTo);
+        ctx.fillStyle = grad;
+        roundRect(ctx, 0, 0, W, H, W * 0.04);
+        ctx.fill();
+
+        // --- Decorative circles ---
+        ctx.save();
+        ctx.globalAlpha = 0.10;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(W - pad, pad, W * 0.13, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.05;
+        ctx.beginPath();
+        ctx.arc(W - pad * 0.4, H - pad * 0.5, W * 0.09, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // --- Top row: Water drop icon + "Ken Water" ---
+        const iconX = pad;
+        const iconY = pad;
+        const iconSize = H * 0.12;
+
+        // Draw water drop SVG path scaled
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        const dropScale = iconSize / 24;
+        ctx.translate(iconX, iconY);
+        ctx.scale(dropScale, dropScale);
+        const dropPath = new Path2D('M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z');
+        ctx.fill(dropPath);
+        ctx.restore();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        ctx.font = `700 ${Math.round(H * 0.075)}px Inter, system-ui, sans-serif`;
+        ctx.textBaseline = 'top';
+        ctx.fillText('Ken Water', iconX + iconSize + H * 0.02, iconY + (iconSize - H * 0.075) / 2);
+
+        // --- Level badge (top right) ---
+        const badgeText = emoji + ' ' + level.toUpperCase();
+        ctx.font = `700 ${Math.round(H * 0.065)}px Inter, system-ui, sans-serif`;
+        const badgeW = ctx.measureText(badgeText).width + H * 0.08;
+        const badgeH = H * 0.115;
+        const badgeX = W - pad - badgeW;
+        const badgeY = pad;
+        ctx.save();
+        ctx.globalAlpha = 0.20;
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+        ctx.lineWidth = 1.5;
+        roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 ${Math.round(H * 0.065)}px Inter, system-ui, sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badgeText, badgeX + H * 0.04, badgeY + badgeH / 2);
+
+        // --- QR Code (bottom right) ---
+        const qrSize = H * 0.28;
+        const qrX = W - pad - qrSize;
+        const qrY = H - pad - qrSize;
+
+        // White QR background
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0,0,0,0.15)';
+        ctx.shadowBlur = 8;
+        roundRect(ctx, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        if (qrSrc) {
+            await new Promise((resolve) => {
+                const qrImg = new Image();
+                qrImg.crossOrigin = 'anonymous';
+                qrImg.onload = () => {
+                    ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+                    resolve();
+                };
+                qrImg.onerror = resolve;
+                qrImg.src = qrSrc;
+            });
+        } else {
+            ctx.fillStyle = '#9ca3af';
+            ctx.font = `${Math.round(H * 0.04)}px monospace`;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center';
+            ctx.fillText('QR', qrX + qrSize / 2, qrY + qrSize / 2);
+            ctx.textAlign = 'start';
+        }
+
+        // --- Bottom left text ---
+        const textX = pad;
+        let textY = H - pad - qrSize;
+
+        // Name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 ${Math.round(H * 0.09)}px Inter, system-ui, sans-serif`;
+        ctx.textBaseline = 'top';
+        const maxNameW = qrX - pad - W * 0.03;
+        let nameText = name;
+        while (ctx.measureText(nameText).width > maxNameW && nameText.length > 2) {
+            nameText = nameText.slice(0, -1);
+        }
+        if (nameText !== name) nameText += '…';
+        ctx.fillText(nameText, textX, textY);
+        textY += H * 0.11;
+
+        // Customer ID
+        ctx.fillStyle = 'rgba(255,255,255,0.70)';
+        ctx.font = `400 ${Math.round(H * 0.065)}px 'Courier New', monospace`;
+        ctx.fillText(custId, textX, textY);
+        textY += H * 0.10;
+
+        // Points with star
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 ${Math.round(H * 0.075)}px Inter, system-ui, sans-serif`;
+        const starScale = (H * 0.075) / 24;
+        ctx.save();
+        ctx.translate(textX, textY);
+        ctx.scale(starScale, starScale);
+        const starPath = new Path2D('M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z');
+        ctx.fill(starPath);
+        ctx.restore();
+        ctx.fillText(points + ' Poin', textX + H * 0.075 + H * 0.02, textY);
+        textY += H * 0.10;
+
+        // Status badge
+        const isActive = status === 'aktif';
+        const sbgColor = isActive ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)';
+        const stextColor = isActive ? '#6ee7b7' : '#fca5a5';
+        const sText = isActive ? '● Aktif' : '● Tidak Aktif';
+        ctx.font = `600 ${Math.round(H * 0.06)}px Inter, system-ui, sans-serif`;
+        const sbW = ctx.measureText(sText).width + H * 0.06;
+        const sbH = H * 0.09;
+        ctx.fillStyle = sbgColor;
+        roundRect(ctx, textX, textY, sbW, sbH, 4);
+        ctx.fill();
+        ctx.fillStyle = stextColor;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sText, textX + H * 0.03, textY + sbH / 2);
+
+        // --- Download ---
+        const link = document.createElement('a');
+        link.download = 'kartu_member_{{ strtolower($customer->customer_id) }}.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+    } catch (err) {
+        console.error('Gagal membuat kartu:', err);
+        alert('Gagal membuat gambar kartu: ' + err.message);
+    } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+}
+
+// CSS spin animation
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
+</script>
+@endpush

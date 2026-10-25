@@ -37,7 +37,7 @@
                         @if($promo->is_used)
                             <span class="font-bold text-white bg-black/30 px-2 py-0.5 rounded">Terpakai</span>
                         @else
-                            <a href="{{ route('portal.order.create') }}" class="font-bold text-indigo-900 bg-white px-3 py-1 rounded-lg shadow-xs hover:bg-indigo-50">Pakai Promo</a>
+                            <a href="{{ route('portal.order.create', ['promo_id' => $promo->id]) }}" class="font-bold text-indigo-900 bg-white px-3 py-1 rounded-lg shadow-xs hover:bg-indigo-50">Pakai Promo</a>
                         @endif
                     </div>
                 </div>

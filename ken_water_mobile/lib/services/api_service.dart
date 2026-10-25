@@ -182,6 +182,7 @@ class ApiService {
     required String paymentMethod,
     String? notes,
     int? voucherId,
+    int? promoId,
   }) async {
     try {
       final body = <String, dynamic>{
@@ -192,6 +193,7 @@ class ApiService {
       };
       if (notes != null && notes.isNotEmpty) body['notes'] = notes;
       if (voucherId != null) body['voucher_id'] = voucherId;
+      if (promoId != null) body['promo_id'] = promoId;
 
       final response = await http
           .post(
@@ -493,10 +495,19 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getAdminCustomers({String search = ''}) async {
+  static Future<List<dynamic>> getAdminCustomers({
+    String search = '',
+    String status = '',
+    String level = '',
+  }) async {
     try {
+      final queryParams = <String, String>{};
+      if (search.isNotEmpty) queryParams['search'] = search;
+      if (status.isNotEmpty) queryParams['status'] = status;
+      if (level.isNotEmpty) queryParams['level'] = level;
+
       final uri = Uri.parse(ApiConstants.adminCustomers).replace(
-        queryParameters: search.isNotEmpty ? {'search': search} : null,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       final response =
           await http.get(uri, headers: _getHeaders()).timeout(const Duration(seconds: 10));
@@ -1244,6 +1255,48 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getAdminCampaignDetail(int id) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminCampaignDetail(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'campaign': data['campaign'] ?? {},
+          'target_customers': data['target_customers'] ?? [],
+        };
+      }
+      return {
+        'success': false,
+        'message': data['message'] ?? 'Gagal memuat detail kampanye',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<bool> adminMarkCampaignSent(int id) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminCampaignMarkSent(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 8));
+
+      final data = jsonDecode(response.body);
+      return data['success'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   // ==========================================
   // CUSTOMER SETTINGS (Harga Galon Real-time)
   // ==========================================
@@ -1286,23 +1339,56 @@ class ApiService {
   // ADMIN REPORTS (Laporan Penjualan)
   // ==========================================
 
-  static Future<Map<String, dynamic>> getAdminReports() async {
+  static Future<Map<String, dynamic>> getAdminReports({int? month, int? year}) async {
     try {
+      final queryParams = <String, String>{};
+      if (month != null) queryParams['month'] = month.toString();
+      if (year != null) queryParams['year'] = year.toString();
+
+      final uri = Uri.parse(ApiConstants.adminReports).replace(
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
+
       final response = await http
-          .get(Uri.parse(ApiConstants.adminReports), headers: _getHeaders())
+          .get(uri, headers: _getHeaders())
           .timeout(const Duration(seconds: 15));
       final data = jsonDecode(response.body);
       if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
+          'period_label': data['period_label'] ?? '',
+          'month': data['month'] ?? DateTime.now().month,
+          'year': data['year'] ?? DateTime.now().year,
+          'years': (data['years'] as List?)
+                  ?.map((y) => int.parse(y.toString()))
+                  .toList() ??
+              [DateTime.now().year],
           'summary': data['summary'] ?? {},
-          'daily_trend': data['daily_trend'] ?? [],
+          'orders': data['orders'] ?? [],
           'top_customers': data['top_customers'] ?? [],
         };
       }
-      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+      return {
+        'success': false,
+        'period_label': '',
+        'month': DateTime.now().month,
+        'year': DateTime.now().year,
+        'years': [DateTime.now().year],
+        'summary': {},
+        'orders': [],
+        'top_customers': [],
+      };
     } catch (e) {
-      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+      return {
+        'success': false,
+        'period_label': '',
+        'month': DateTime.now().month,
+        'year': DateTime.now().year,
+        'years': [DateTime.now().year],
+        'summary': {},
+        'orders': [],
+        'top_customers': [],
+      };
     }
   }
 

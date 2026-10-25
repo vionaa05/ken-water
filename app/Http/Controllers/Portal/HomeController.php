@@ -19,11 +19,24 @@ class HomeController extends Controller
         
         $progress = $this->pointService->getProgressToNextLevel($user);
 
+        // QR Code untuk preview kartu member digital
+        $options = new \chillerlan\QRCode\QROptions([
+            'outputInterface' => \chillerlan\QRCode\Output\QRMarkupSVG::class,
+            'eccLevel'        => \chillerlan\QRCode\Common\EccLevel::L,
+            'scale'           => 5,
+            'outputBase64'    => false,
+            'addQuietzone'    => true,
+            'quietzoneSize'   => 1,
+        ]);
+        $qr = new \chillerlan\QRCode\QRCode($options);
+        $svgRaw   = $qr->render($user->customer_id);
+        $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode($svgRaw);
+
         // Cek jika akun inactive
         if ($user->status === 'tidak_aktif') {
-            return view('portal.home-inactive', compact('user', 'progress'));
+            return view('portal.home-inactive', compact('user', 'progress', 'qrBase64'));
         }
 
-        return view('portal.home', compact('user', 'activeVouchersCount', 'personalPromosCount', 'progress'));
+        return view('portal.home', compact('user', 'activeVouchersCount', 'personalPromosCount', 'progress', 'qrBase64'));
     }
 }

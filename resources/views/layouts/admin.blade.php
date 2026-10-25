@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin - Ken Water')</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0%25' stop-color='%230284c7'/><stop offset='100%25' stop-color='%2306b6d4'/></linearGradient></defs><rect width='24' height='24' rx='6' fill='url(%23g)'/><path d='M12 4.5l4.5 4.5a6.36 6.36 0 1 1-9 0z' fill='white'/></svg>">
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -78,9 +79,15 @@
     <!-- Sidebar -->
     <aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="fixed inset-y-0 left-0 z-50 w-64 bg-secondary text-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full flex flex-col print:hidden">
         <div class="flex items-center justify-between h-16 px-4 bg-gray-900 border-b border-gray-800">
-            <span class="text-lg font-bold flex items-center gap-2">
-                Ken Water
-            </span>
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-400 text-white flex items-center justify-center shadow-md shadow-sky-500/25">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-base font-bold text-white tracking-tight leading-tight">Ken Water</span>
+                    <span class="text-[10px] text-sky-400 font-medium tracking-wider uppercase">Admin Portal</span>
+                </div>
+            </a>
             <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
