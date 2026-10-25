@@ -377,7 +377,7 @@ async function downloadLoyaltyCardPng() {
         // --- Top row: Water drop icon + "Ken Water" ---
         const iconX = pad;
         const iconY = pad;
-        const iconSize = H * 0.12;
+        const iconSize = H * 0.085;
 
         // Draw water drop SVG path scaled
         ctx.save();
@@ -390,17 +390,20 @@ async function downloadLoyaltyCardPng() {
         ctx.restore();
 
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        ctx.font = `700 ${Math.round(H * 0.075)}px Inter, system-ui, sans-serif`;
-        ctx.textBaseline = 'top';
-        ctx.fillText('Ken Water', iconX + iconSize + H * 0.02, iconY + (iconSize - H * 0.075) / 2);
+        ctx.font = `700 ${Math.round(H * 0.065)}px Inter, system-ui, sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Ken Water', iconX + iconSize + H * 0.02, iconY + iconSize / 2);
 
         // --- Level badge (top right) ---
         const badgeText = emoji + ' ' + level.toUpperCase();
-        ctx.font = `700 ${Math.round(H * 0.065)}px Inter, system-ui, sans-serif`;
-        const badgeW = ctx.measureText(badgeText).width + H * 0.08;
-        const badgeH = H * 0.115;
+        ctx.font = `700 ${Math.round(H * 0.048)}px Inter, system-ui, sans-serif`;
+        const badgeTextW = ctx.measureText(badgeText).width;
+        const badgePadX = H * 0.04;
+        const badgeW = badgeTextW + (badgePadX * 2);
+        const badgeH = H * 0.085;
         const badgeX = W - pad - badgeW;
         const badgeY = pad;
+
         ctx.save();
         ctx.globalAlpha = 0.20;
         ctx.fillStyle = '#ffffff';
@@ -408,27 +411,36 @@ async function downloadLoyaltyCardPng() {
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.strokeStyle = 'rgba(255,255,255,0.30)';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
         roundRect(ctx, badgeX, badgeY, badgeW, badgeH, badgeH / 2);
         ctx.stroke();
         ctx.restore();
+
         ctx.fillStyle = '#ffffff';
-        ctx.font = `700 ${Math.round(H * 0.065)}px Inter, system-ui, sans-serif`;
+        ctx.font = `700 ${Math.round(H * 0.048)}px Inter, system-ui, sans-serif`;
         ctx.textBaseline = 'middle';
-        ctx.fillText(badgeText, badgeX + H * 0.04, badgeY + badgeH / 2);
+        ctx.fillText(badgeText, badgeX + badgePadX, badgeY + badgeH / 2);
 
-        // --- QR Code (bottom right) ---
-        const qrSize = H * 0.28;
-        const qrX = W - pad - qrSize;
-        const qrY = H - pad - qrSize;
+        // --- Bottom Row Layout ---
+        // QR Code positioned at bottom-right
+        const qrSize = Math.round(H * 0.38);
+        const qrPadding = Math.round(H * 0.025);
+        const qrBoxSize = qrSize + (qrPadding * 2);
+        const qrBoxX = W - pad - qrBoxSize;
+        const qrBoxY = H - pad - qrBoxSize;
 
-        // White QR background
+        // White QR background card
+        ctx.save();
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(0,0,0,0.15)';
-        ctx.shadowBlur = 8;
-        roundRect(ctx, qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
+        ctx.shadowColor = 'rgba(0,0,0,0.18)';
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetY = 4;
+        roundRect(ctx, qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 12);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.restore();
+
+        const qrX = qrBoxX + qrPadding;
+        const qrY = qrBoxY + qrPadding;
 
         if (qrSrc) {
             await new Promise((resolve) => {
@@ -446,60 +458,75 @@ async function downloadLoyaltyCardPng() {
             ctx.font = `${Math.round(H * 0.04)}px monospace`;
             ctx.textBaseline = 'middle';
             ctx.textAlign = 'center';
-            ctx.fillText('QR', qrX + qrSize / 2, qrY + qrSize / 2);
+            ctx.fillText('QR CODE', qrX + qrSize / 2, qrY + qrSize / 2);
             ctx.textAlign = 'start';
         }
 
-        // --- Bottom left text ---
+        // --- Bottom left texts (Customer Info) ---
+        // Align nicely relative to card height so nothing gets truncated
         const textX = pad;
-        let textY = H - pad - qrSize;
+        const maxTextW = qrBoxX - pad - (W * 0.03);
 
-        // Name
+        // 1. Name
+        const nameFontSize = Math.round(H * 0.075);
+        ctx.font = `700 ${nameFontSize}px Inter, system-ui, sans-serif`;
         ctx.fillStyle = '#ffffff';
-        ctx.font = `700 ${Math.round(H * 0.09)}px Inter, system-ui, sans-serif`;
-        ctx.textBaseline = 'top';
-        const maxNameW = qrX - pad - W * 0.03;
+        ctx.textBaseline = 'alphabetic';
+
         let nameText = name;
-        while (ctx.measureText(nameText).width > maxNameW && nameText.length > 2) {
+        while (ctx.measureText(nameText).width > maxTextW && nameText.length > 2) {
             nameText = nameText.slice(0, -1);
         }
         if (nameText !== name) nameText += '…';
-        ctx.fillText(nameText, textX, textY);
-        textY += H * 0.11;
+        ctx.fillText(nameText, textX, Math.round(H * 0.56));
 
-        // Customer ID
-        ctx.fillStyle = 'rgba(255,255,255,0.70)';
-        ctx.font = `400 ${Math.round(H * 0.065)}px 'Courier New', monospace`;
-        ctx.fillText(custId, textX, textY);
-        textY += H * 0.10;
+        // 2. Customer ID
+        const idFontSize = Math.round(H * 0.050);
+        ctx.font = `400 ${idFontSize}px 'Courier New', monospace`;
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillText(custId, textX, Math.round(H * 0.66));
 
-        // Points with star
+        // 3. Points with star
+        const pointFontSize = Math.round(H * 0.060);
+        ctx.font = `700 ${pointFontSize}px Inter, system-ui, sans-serif`;
         ctx.fillStyle = '#ffffff';
-        ctx.font = `700 ${Math.round(H * 0.075)}px Inter, system-ui, sans-serif`;
-        const starScale = (H * 0.075) / 24;
+        ctx.textBaseline = 'middle';
+
+        const starSize = Math.round(H * 0.055);
+        const starScale = starSize / 24;
+        const starY = Math.round(H * 0.77);
+
         ctx.save();
-        ctx.translate(textX, textY);
+        ctx.translate(textX, starY - starSize / 2);
         ctx.scale(starScale, starScale);
         const starPath = new Path2D('M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z');
         ctx.fill(starPath);
         ctx.restore();
-        ctx.fillText(points + ' Poin', textX + H * 0.075 + H * 0.02, textY);
-        textY += H * 0.10;
 
-        // Status badge
-        const isActive = status === 'aktif';
+        ctx.fillText(points + ' Poin', textX + starSize + Math.round(H * 0.02), starY);
+
+        // 4. Status badge
+        const isActive = (status || '').toLowerCase() === 'aktif';
         const sbgColor = isActive ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)';
         const stextColor = isActive ? '#6ee7b7' : '#fca5a5';
         const sText = isActive ? '● Aktif' : '● Tidak Aktif';
-        ctx.font = `600 ${Math.round(H * 0.06)}px Inter, system-ui, sans-serif`;
-        const sbW = ctx.measureText(sText).width + H * 0.06;
-        const sbH = H * 0.09;
+
+        const statusFontSize = Math.round(H * 0.045);
+        ctx.font = `600 ${statusFontSize}px Inter, system-ui, sans-serif`;
+        const sTextW = ctx.measureText(sText).width;
+        const sbPadX = Math.round(H * 0.035);
+        const sbW = sTextW + (sbPadX * 2);
+        const sbH = Math.round(H * 0.075);
+        const sbY = Math.round(H * 0.85);
+
         ctx.fillStyle = sbgColor;
-        roundRect(ctx, textX, textY, sbW, sbH, 4);
+        roundRect(ctx, textX, sbY, sbW, sbH, 6);
         ctx.fill();
+
         ctx.fillStyle = stextColor;
         ctx.textBaseline = 'middle';
-        ctx.fillText(sText, textX + H * 0.03, textY + sbH / 2);
+        ctx.fillText(sText, textX + sbPadX, sbY + sbH / 2);
 
         // --- Download ---
         const link = document.createElement('a');
