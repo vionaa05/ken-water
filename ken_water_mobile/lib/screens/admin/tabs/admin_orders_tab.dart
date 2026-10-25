@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants/app_colors.dart';
 import '../../../models/order_model.dart';
 import '../../../services/api_service.dart';
@@ -52,8 +53,20 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
   List<OrderModel> get _filteredOrders {
     return _allOrders.where((order) {
       final normalizedStatus = _normalizeStatus(order.status);
-      final matchesFilter = _selectedFilter == 'all' ||
-          normalizedStatus == _selectedFilter;
+      final isKasir = (order.source ?? '').toLowerCase() == 'kasir' || (order.source ?? '').toLowerCase() == 'langsung';
+      final isOnline = !isKasir;
+
+      bool matchesFilter;
+      if (_selectedFilter == 'all') {
+        matchesFilter = true;
+      } else if (_selectedFilter == 'kasir') {
+        matchesFilter = isKasir;
+      } else if (_selectedFilter == 'online') {
+        matchesFilter = isOnline;
+      } else {
+        matchesFilter = normalizedStatus == _selectedFilter;
+      }
+
       final query = _searchQuery.toLowerCase();
       final matchesSearch = query.isEmpty ||
           (order.orderNumber.toLowerCase().contains(query)) ||
@@ -137,6 +150,19 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
     if (confirm == true) {
       _updateStatus(order, 'dibatalkan');
     }
+  }
+
+  Future<void> _openWhatsApp(String phone, String orderNumber) async {
+    String cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62${cleanPhone.substring(1)}';
+    }
+    final uri = Uri.parse('https://wa.me/$cleanPhone?text=Halo,%20kami%20dari%20Ken%20Water%20mengenai%20pesanan%20%23$orderNumber');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
   }
 
   void _showOrderActionModal(OrderModel order) {
@@ -252,6 +278,18 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
                           ],
                         ),
                       ),
+                      if (order.customerPhone != null && order.customerPhone!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        IconButton(
+                          tooltip: 'Hubungi via WhatsApp',
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFFDCFCE7),
+                            padding: const EdgeInsets.all(8),
+                          ),
+                          icon: const Icon(Icons.chat, color: Color(0xFF16A34A), size: 18),
+                          onPressed: () => _openWhatsApp(order.customerPhone!, order.orderNumber),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -260,6 +298,10 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
 
                 // Rincian Pesanan
                 _buildModalDetailRow('Jumlah Galon', '${order.gallonQty} Galon'),
+                if (order.unitPrice > 0) ...[
+                  const SizedBox(height: 8),
+                  _buildModalDetailRow('Harga Satuan', '${currencyFormatter.format(order.unitPrice)} / galon'),
+                ],
                 const SizedBox(height: 8),
                 _buildModalDetailRow('Total Pembayaran', currencyFormatter.format(order.totalPrice), isHighlight: true),
                 const SizedBox(height: 8),
@@ -280,6 +322,14 @@ class _AdminOrdersTabState extends State<AdminOrdersTab> {
                 if (order.notes != null && order.notes!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildModalDetailRow('Catatan Pelanggan', order.notes!, isItalic: true),
+                ],
+                if (order.processorName != null && order.processorName!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildModalDetailRow('Diproses Oleh', order.processorName!),
+                ],
+                if (order.completedAt != null && order.completedAt!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildModalDetailRow('Waktu Selesai', order.completedAt!),
                 ],
 
                 const SizedBox(height: 24),

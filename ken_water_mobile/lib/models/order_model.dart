@@ -9,12 +9,15 @@ class OrderModel {
   final String? paymentMethod;
   final String status;
   final String statusLabel;
+  final String? statusColor;
   final String? customerName;
   final String? customerId;
   final String? customerPhone;
   final String? customerLevel;
   final String? source;
   final String? notes;
+  final String? processorName;
+  final String? completedAt;
   final String? _orderNumber;
 
   OrderModel({
@@ -28,12 +31,15 @@ class OrderModel {
     this.paymentMethod,
     required this.status,
     required this.statusLabel,
+    this.statusColor,
     this.customerName,
     this.customerId,
     this.customerPhone,
     this.customerLevel,
     this.source,
     this.notes,
+    this.processorName,
+    this.completedAt,
     String? orderNumber,
   }) : _orderNumber = orderNumber;
 
@@ -52,12 +58,15 @@ class OrderModel {
       paymentMethod: json['payment_method'],
       status: json['status'] ?? 'selesai',
       statusLabel: json['status_label'] ?? json['status'] ?? 'Selesai',
+      statusColor: json['status_color'],
       customerName: json['customer_name'] ?? json['customer']?['name'],
       customerId: json['customer_id'] ?? json['customer']?['customer_id'],
       customerPhone: json['customer_phone'] ?? json['user']?['phone'] ?? json['customer']?['phone'],
       customerLevel: json['customer_level'] ?? json['user']?['loyalty_level'] ?? json['customer']?['loyalty_level'] ?? 'bronze',
       source: json['source'],
       notes: json['notes'],
+      processorName: json['processor_name'],
+      completedAt: json['completed_at'],
       orderNumber: json['order_number'] ?? (json['id'] != null ? 'ORD-${json['id'].toString().padLeft(5, '0')}' : null),
     );
   }

@@ -30,6 +30,21 @@ class PersonalPromo extends Model
 
     public function isActive(): bool
     {
-        return !$this->is_used && !$this->is_expired && now()->between($this->valid_from, $this->valid_until);
+        if ($this->is_used || $this->is_expired) {
+            return false;
+        }
+
+        $today = now()->format('Y-m-d');
+        $start = $this->valid_from ? $this->valid_from->format('Y-m-d') : null;
+        $end = $this->valid_until ? $this->valid_until->format('Y-m-d') : null;
+
+        if ($start && $today < $start) {
+            return false;
+        }
+        if ($end && $today > $end) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -9,15 +9,22 @@ use App\Models\RewardRedemption;
 use App\Models\UserVoucher;
 use App\Models\Complaint;
 use App\Models\Notification;
+use App\Models\Setting;
+use App\Models\PersonalPromo;
 use App\Services\PointService;
+use App\Services\ReactivationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class CustomerApiController extends Controller
 {
-    public function __construct(private PointService $pointService) {}
+    public function __construct(
+        private PointService $pointService,
+        private ReactivationService $reactivationService
+    ) {}
 
     /**
      * Dapatkan data Kartu Member & Loyalitas
@@ -53,6 +60,7 @@ class CustomerApiController extends Controller
         $user = $request->user();
 
         $orders = Order::where('user_id', $user->id)
+            ->with('processor:id,name')
             ->latest('order_date')
             ->take(50)
             ->get()
@@ -64,12 +72,15 @@ class CustomerApiController extends Controller
                     'unit_price' => (float) $order->unit_price,
                     'total_price' => (float) $order->total_price,
                     'delivery_method' => $order->delivery_method,
+                    'delivery_address' => $order->delivery_address,
                     'payment_method' => $order->payment_method,
                     'status' => $order->status,
                     'status_label' => $order->status_label,
                     'status_color' => $order->status_color ?? '#10B981',
                     'notes' => $order->notes,
                     'source' => $order->source,
+                    'processor_name' => $order->processor ? $order->processor->name : null,
+                    'completed_at' => $order->completed_at ? $order->completed_at->format('d M Y, H:i') : null,
                 ];
             });
 
@@ -90,6 +101,7 @@ class CustomerApiController extends Controller
             'delivery_address' => 'required_if:delivery_method,antar|nullable|string',
             'payment_method' => 'required|in:tunai,transfer',
             'notes' => 'nullable|string|max:500',
+            'voucher_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -102,7 +114,32 @@ class CustomerApiController extends Controller
         $user = $request->user();
         $pricePerGallon = (float) (function_exists('setting') ? setting('price_per_gallon', 5000) : 5000);
         $qty = (int) $request->gallon_qty;
-        $totalPrice = $qty * $pricePerGallon;
+        $subtotal = $qty * $pricePerGallon;
+        $discount = 0;
+
+        $userVoucher = null;
+        if ($request->filled('voucher_id')) {
+            $userVoucher = UserVoucher::where('user_id', $user->id)
+                ->where('status', 'aktif')
+                ->where(function ($q) use ($request) {
+                    $q->where('id', $request->voucher_id)
+                      ->orWhere('voucher_id', $request->voucher_id);
+                })
+                ->with('voucher')
+                ->first();
+
+            if ($userVoucher && $userVoucher->voucher && $userVoucher->voucher->isValid()) {
+                if ($userVoucher->voucher->min_purchase && $subtotal < $userVoucher->voucher->min_purchase) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Minimal belanja untuk voucher ini adalah Rp " . number_format($userVoucher->voucher->min_purchase, 0, ',', '.'),
+                    ], 422);
+                }
+                $discount = $userVoucher->voucher->calculateDiscount($subtotal);
+            }
+        }
+
+        $totalPrice = max(0, $subtotal - $discount);
 
         $order = Order::create([
             'user_id' => $user->id,
@@ -119,12 +156,23 @@ class CustomerApiController extends Controller
             'period_start' => $user->current_period_start ?? now(),
         ]);
 
+        if ($userVoucher) {
+            $userVoucher->update([
+                'status' => 'terpakai',
+                'used_at' => now(),
+                'order_id' => $order->id,
+            ]);
+            $userVoucher->voucher->increment('used_count');
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Pesanan berhasil dibuat! Kami akan segera memproses pesanan Anda.',
             'order' => [
                 'id' => $order->id,
                 'gallon_qty' => $qty,
+                'subtotal' => $subtotal,
+                'discount' => $discount,
                 'total_price' => $totalPrice,
                 'status' => 'dipesan',
                 'status_label' => 'Dipesan',
@@ -176,6 +224,41 @@ class CustomerApiController extends Controller
                 'points' => (int) $user->points,
                 'status' => $user->status,
             ],
+        ]);
+    }
+
+    /**
+     * Ganti Password Pelanggan (Sesuai Web Portal)
+     */
+    public function updatePassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kata sandi saat ini tidak sesuai.',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kata sandi berhasil diubah.',
         ]);
     }
 
@@ -318,19 +401,23 @@ class CustomerApiController extends Controller
                 ->get()
                 ->map(function ($uv) {
                     $v = $uv->voucher;
+                    $isValidVoucher = $v ? $v->isValid() : false;
                     return [
                         'id' => $uv->id,
                         'voucher_id' => $v ? $v->id : null,
                         'code' => $v ? $v->code : '-',
-                        'name' => $v ? $v->name : 'Voucher',
+                        'name' => $v ? $v->name : 'Voucher Diskon',
                         'description' => $v ? $v->description : '',
                         'discount_type' => $v ? $v->discount_type : 'nominal',
                         'discount_value' => $v ? (float) $v->discount_value : 0,
                         'min_purchase' => $v ? (float) ($v->min_purchase ?? 0) : 0,
                         'expired_at' => $v && $v->expired_at ? $v->expired_at->format('d M Y') : null,
-                        'is_used' => (bool) $uv->is_used,
+                        'status' => $uv->status,
+                        'status_label' => $uv->status_label,
+                        'is_active' => $uv->status === 'aktif' && $isValidVoucher,
+                        'is_used' => $uv->status === 'terpakai',
                         'used_at' => $uv->used_at ? $uv->used_at->format('d M Y') : null,
-                        'assigned_at' => $uv->created_at->format('d M Y'),
+                        'assigned_at' => $uv->created_at ? $uv->created_at->format('d M Y') : '-',
                     ];
                 });
 
@@ -514,5 +601,84 @@ class CustomerApiController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false], 500);
         }
+    }
+
+    /**
+     * Pengaturan Publik (Harga Galon Real-time untuk Pelanggan)
+     */
+    public function getSettings(Request $request)
+    {
+        try {
+            $price = Setting::where('key', 'price_per_gallon')->value('value') ?? 5000;
+            $points = Setting::where('key', 'points_per_gallon')->value('value') ?? 1;
+            return response()->json([
+                'success' => true,
+                'settings' => [
+                    'price_per_gallon' => (float) $price,
+                    'points_per_gallon' => (int) $points,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => true,
+                'settings' => ['price_per_gallon' => 5000.0, 'points_per_gallon' => 1],
+            ]);
+        }
+    }
+
+    /**
+     * Promo Personal Aktif untuk Pelanggan
+     */
+    public function personalPromos(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $today = Carbon::today();
+
+            $promos = PersonalPromo::where('user_id', $user->id)
+                ->where('valid_from', '<=', $today->copy()->endOfDay())
+                ->where('valid_until', '>=', $today->copy()->startOfDay())
+                ->get()
+                ->map(function ($promo) {
+                    return [
+                        'id'             => $promo->id,
+                        'name'           => $promo->name,
+                        'description'    => $promo->description,
+                        'discount_type'  => $promo->discount_type,
+                        'discount_value' => (float) $promo->discount_value,
+                        'valid_from'     => $promo->valid_from
+                            ? \Carbon\Carbon::parse($promo->valid_from)->format('d M Y')
+                            : null,
+                        'valid_until'    => $promo->valid_until
+                            ? \Carbon\Carbon::parse($promo->valid_until)->format('d M Y')
+                            : null,
+                    ];
+                });
+
+            return response()->json(['success' => true, 'promos' => $promos]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => true, 'promos' => []]);
+        }
+    }
+
+    /**
+     * Reaktivasi Akun Pelanggan Churn / Tidak Aktif
+     */
+    public function reactivate(Request $request)
+    {
+        $user = $request->user();
+        $result = $this->reactivationService->reactivate($user);
+
+        return response()->json([
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'status' => $user->fresh()->status,
+                'points' => (int) $user->fresh()->points,
+                'loyalty_level' => $user->fresh()->loyalty_level,
+            ],
+        ], $result['success'] ? 200 : 400);
     }
 }

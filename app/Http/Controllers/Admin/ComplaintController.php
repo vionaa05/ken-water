@@ -48,10 +48,11 @@ class ComplaintController extends Controller
             'response' => 'nullable|string|max:1000',
         ]);
 
+        $note = $request->action_taken ?? $request->response;
         $updateData = [
             'status' => $request->status,
-            'action_taken' => $request->action_taken,
-            'response' => $request->response,
+            'action_taken' => $request->action_taken ?? $note,
+            'response' => $request->response ?? $note,
             'handled_by' => auth()->id(),
         ];
 

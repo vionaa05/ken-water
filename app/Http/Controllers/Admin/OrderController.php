@@ -15,8 +15,11 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $query = Order::with(['user', 'processor'])
-            ->where('source', 'online')
             ->latest('order_date');
+
+        if ($request->filled('source')) {
+            $query->where('source', $request->source);
+        }
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -32,10 +35,11 @@ class OrderController extends Controller
         $orders = $query->paginate(20)->withQueryString();
 
         $statusCounts = [
-            'dipesan' => Order::where('source', 'online')->where('status', 'dipesan')->count(),
-            'diproses' => Order::where('source', 'online')->where('status', 'diproses')->count(),
-            'diantar' => Order::where('source', 'online')->where('status', 'diantar')->count(),
-            'siap_diambil' => Order::where('source', 'online')->where('status', 'siap_diambil')->count(),
+            'dipesan' => Order::where('status', 'dipesan')->count(),
+            'diproses' => Order::where('status', 'diproses')->count(),
+            'diantar' => Order::where('status', 'diantar')->count(),
+            'siap_diambil' => Order::where('status', 'siap_diambil')->count(),
+            'selesai' => Order::where('status', 'selesai')->count(),
         ];
 
         return view('admin.orders.index', compact('orders', 'statusCounts'));

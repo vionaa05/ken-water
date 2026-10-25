@@ -30,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Profil
         Route::put('/profile', [CustomerApiController::class, 'updateProfile']);
+        Route::put('/profile/password', [CustomerApiController::class, 'updatePassword']);
 
         // Reward & Poin
         Route::get('/rewards', [CustomerApiController::class, 'rewards']);
@@ -47,6 +48,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/notifications', [CustomerApiController::class, 'notifications']);
         Route::post('/notifications/read-all', [CustomerApiController::class, 'markAllNotificationsRead']);
         Route::post('/notifications/{id}/read', [CustomerApiController::class, 'markNotificationRead']);
+
+        // Reaktivasi Akun
+        Route::post('/reactivate', [CustomerApiController::class, 'reactivate']);
+
+        // Pengaturan Publik (harga galon real-time)
+        Route::get('/settings', [CustomerApiController::class, 'getSettings']);
+
+        // Promo Personal Aktif
+        Route::get('/promos', [CustomerApiController::class, 'personalPromos']);
     });
 
     // ==========================================
@@ -56,6 +66,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', [AdminApiController::class, 'dashboard']);
         Route::get('/customers/search', [AdminApiController::class, 'searchCustomer']);
         Route::get('/customers', [AdminApiController::class, 'customers']);
+        Route::post('/customers', [AdminApiController::class, 'createCustomer']);
+        Route::put('/customers/{id}', [AdminApiController::class, 'updateCustomer']);
+        Route::delete('/customers/{id}', [AdminApiController::class, 'deleteCustomer']);
         Route::post('/transactions', [AdminApiController::class, 'createTransaction']);
         Route::get('/orders', [AdminApiController::class, 'orders']);
         Route::patch('/orders/{order}/status', [AdminApiController::class, 'updateOrderStatus']);
@@ -69,5 +82,31 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/redemptions/{redemption}/validate', [AdminApiController::class, 'validateRedemption']);
         Route::patch('/redemptions/{redemption}/cancel', [AdminApiController::class, 'cancelRedemption']);
         Route::get('/segmentation', [AdminApiController::class, 'segmentation']);
+
+        // Pengaturan Sistem
+        Route::get('/settings', [AdminApiController::class, 'settings']);
+        Route::post('/settings', [AdminApiController::class, 'updateSettings']);
+
+        // Voucher & Promo Management
+        Route::get('/vouchers', [AdminApiController::class, 'vouchers']);
+        Route::post('/vouchers', [AdminApiController::class, 'createVoucher']);
+        Route::post('/vouchers/{id}/assign', [AdminApiController::class, 'assignVoucher']);
+        Route::get('/promos', [AdminApiController::class, 'promos']);
+        Route::post('/promos', [AdminApiController::class, 'createPromo']);
+        Route::patch('/promos/{id}/toggle', [AdminApiController::class, 'togglePromo']);
+
+        // Kampanye CRM WhatsApp
+        Route::get('/campaigns', [AdminApiController::class, 'campaigns']);
+        Route::post('/campaigns', [AdminApiController::class, 'createCampaign']);
+        Route::delete('/campaigns/{id}', [AdminApiController::class, 'deleteCampaign']);
+
+        // Laporan Penjualan
+        Route::get('/reports', [AdminApiController::class, 'reports']);
+
+        // Voucher Edit/Delete
+        Route::delete('/vouchers/{id}', [AdminApiController::class, 'deleteVoucher']);
+
+        // Promo Edit/Delete
+        Route::delete('/promos/{id}', [AdminApiController::class, 'deletePromo']);
     });
 });

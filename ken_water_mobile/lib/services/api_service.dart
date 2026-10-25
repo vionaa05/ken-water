@@ -181,26 +181,30 @@ class ApiService {
     String? deliveryAddress,
     required String paymentMethod,
     String? notes,
+    int? voucherId,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'gallon_qty': gallonQty,
+        'delivery_method': deliveryMethod,
+        'delivery_address': deliveryAddress,
+        'payment_method': paymentMethod,
+      };
+      if (notes != null && notes.isNotEmpty) body['notes'] = notes;
+      if (voucherId != null) body['voucher_id'] = voucherId;
+
       final response = await http
           .post(
             Uri.parse(ApiConstants.customerCreateOrder),
             headers: _getHeaders(),
-            body: jsonEncode({
-              'gallon_qty': gallonQty,
-              'delivery_method': deliveryMethod,
-              'delivery_address': deliveryAddress,
-              'payment_method': paymentMethod,
-              'notes': notes,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 
       final data = jsonDecode(response.body);
       if ((response.statusCode == 200 || response.statusCode == 201) &&
           data['success'] == true) {
-        return {'success': true, 'message': data['message']};
+        return {'success': true, 'message': data['message'], 'order': data['order']};
       }
       return {
         'success': false,
@@ -248,6 +252,34 @@ class ApiService {
       };
     } catch (e) {
       return {'success': false, 'message': 'Gagal terhubung ke server'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String passwordConfirmation,
+  }) async {
+    try {
+      final response = await http
+          .put(
+            Uri.parse(ApiConstants.customerChangePassword),
+            headers: _getHeaders(),
+            body: jsonEncode({
+              'current_password': currentPassword,
+              'password': newPassword,
+              'password_confirmation': passwordConfirmation,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal mengubah kata sandi',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 
@@ -781,6 +813,524 @@ class ApiService {
       return {'success': false, 'customers': [], 'message': data['message'] ?? 'Gagal memuat segmentasi'};
     } catch (e) {
       return {'success': false, 'customers': [], 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // CUSTOMER REACTION
+  // ==========================================
+
+  static Future<Map<String, dynamic>> reactivateAccount() async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.customerReactivate),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 15));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal mengaktifkan akun',
+        'user': data['user'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // ADMIN CUSTOMER CRUD
+  // ==========================================
+
+  static Future<Map<String, dynamic>> adminCreateCustomer({
+    required String name,
+    required String phone,
+    required String address,
+    String? birthDate,
+    required String password,
+  }) async {
+    try {
+      final body = {
+        'name': name.trim(),
+        'phone': phone.trim(),
+        'address': address.trim(),
+        'password': password,
+      };
+      if (birthDate != null && birthDate.isNotEmpty) {
+        body['birth_date'] = birthDate;
+      }
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminCustomers),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal menambahkan pelanggan',
+        'customer': data['customer'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminUpdateCustomer(
+    int id, {
+    required String name,
+    required String phone,
+    required String address,
+    String? birthDate,
+    String? status,
+    String? password,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'phone': phone.trim(),
+        'address': address.trim(),
+      };
+      if (birthDate != null && birthDate.isNotEmpty) body['birth_date'] = birthDate;
+      if (status != null) body['status'] = status;
+      if (password != null && password.isNotEmpty) body['password'] = password;
+
+      final response = await http
+          .put(
+            Uri.parse(ApiConstants.adminCustomerDetail(id)),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal memperbarui pelanggan',
+        'customer': data['customer'],
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminDeleteCustomer(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse(ApiConstants.adminCustomerDetail(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal menghapus pelanggan',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // ADMIN SETTINGS
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminSettings() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminSettings),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'settings': data['settings']};
+      }
+      return {'success': false, 'message': data['message'] ?? 'Gagal memuat pengaturan'};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> saveAdminSettings({
+    required double pricePerGallon,
+    required int pointsPerGallon,
+    required int inactiveDays,
+    required int silverThreshold,
+    required int goldThreshold,
+  }) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminSettings),
+            headers: _getHeaders(),
+            body: jsonEncode({
+              'price_per_gallon': pricePerGallon,
+              'points_per_gallon': pointsPerGallon,
+              'inactive_days': inactiveDays,
+              'silver_threshold': silverThreshold,
+              'gold_threshold': goldThreshold,
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal menyimpan pengaturan',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // ADMIN VOUCHERS
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminVouchers() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminVouchers),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'vouchers': data['vouchers'] ?? []};
+      }
+      return {'success': false, 'vouchers': [], 'message': data['message'] ?? 'Gagal memuat voucher'};
+    } catch (e) {
+      return {'success': false, 'vouchers': [], 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminCreateVoucher({
+    required String code,
+    required String name,
+    String? description,
+    required String discountType,
+    required double discountValue,
+    double? minPurchase,
+    required String validFrom,
+    required String validUntil,
+    String usageType = 'sekali',
+    int? maxUsage,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'code': code.trim().toUpperCase(),
+        'name': name.trim(),
+        'discount_type': discountType,
+        'discount_value': discountValue,
+        'valid_from': validFrom,
+        'valid_until': validUntil,
+        'usage_type': usageType,
+        'is_active': true,
+      };
+      if (description != null) body['description'] = description;
+      if (minPurchase != null) body['min_purchase'] = minPurchase;
+      if (maxUsage != null) body['max_usage'] = maxUsage;
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminVouchers),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal membuat voucher',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminAssignVoucher(
+      int voucherId, List<int> userIds) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminAssignVoucher(voucherId)),
+            headers: _getHeaders(),
+            body: jsonEncode({'user_ids': userIds}),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal membagikan voucher',
+        'assigned_count': data['assigned_count'] ?? 0,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // ADMIN PROMOS
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminPromos() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminPromos),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'promos': data['promos'] ?? []};
+      }
+      return {'success': false, 'promos': [], 'message': data['message'] ?? 'Gagal memuat promo'};
+    } catch (e) {
+      return {'success': false, 'promos': [], 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminCreatePromo({
+    required int userId,
+    required String name,
+    String? description,
+    required String discountType,
+    required double discountValue,
+    required String validFrom,
+    required String validUntil,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'user_id': userId,
+        'name': name.trim(),
+        'discount_type': discountType,
+        'discount_value': discountValue,
+        'valid_from': validFrom,
+        'valid_until': validUntil,
+      };
+      if (description != null) body['description'] = description;
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminPromos),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal membuat promo',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminTogglePromo(int id) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse(ApiConstants.adminTogglePromo(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? '',
+        'is_active': data['is_active'] ?? false,
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // ADMIN CAMPAIGNS (WHATSAPP CRM)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminCampaigns() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(ApiConstants.adminCampaigns),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'campaigns': data['campaigns'] ?? []};
+      }
+      return {'success': false, 'campaigns': [], 'message': data['message'] ?? 'Gagal memuat kampanye'};
+    } catch (e) {
+      return {'success': false, 'campaigns': [], 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminCreateCampaign({
+    required String name,
+    required String type,
+    required List<String> targetSegment,
+    required String periodStart,
+    required String periodEnd,
+    required String messageTemplate,
+    int? voucherId,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'type': type,
+        'target_segment': targetSegment,
+        'period_start': periodStart,
+        'period_end': periodEnd,
+        'message_template': messageTemplate,
+      };
+      if (voucherId != null) body['voucher_id'] = voucherId;
+
+      final response = await http
+          .post(
+            Uri.parse(ApiConstants.adminCampaigns),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal membuat kampanye',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminDeleteCampaign(int id) async {
+    try {
+      final response = await http
+          .delete(
+            Uri.parse(ApiConstants.adminCampaignDetail(id)),
+            headers: _getHeaders(),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'message': data['message'] ?? 'Gagal menghapus kampanye',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  // ==========================================
+  // CUSTOMER SETTINGS (Harga Galon Real-time)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getCustomerSettings() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.customerSettings), headers: _getHeaders())
+          .timeout(const Duration(seconds: 8));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'settings': data['settings']};
+      }
+      return {'success': false, 'settings': {'price_per_gallon': 5000.0, 'points_per_gallon': 1}};
+    } catch (_) {
+      return {'success': false, 'settings': {'price_per_gallon': 5000.0, 'points_per_gallon': 1}};
+    }
+  }
+
+  // ==========================================
+  // CUSTOMER PROMOS (Promo Personal Aktif)
+  // ==========================================
+
+  static Future<List<dynamic>> getCustomerPromos() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.customerPromos), headers: _getHeaders())
+          .timeout(const Duration(seconds: 8));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return data['promos'] ?? [];
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ==========================================
+  // ADMIN REPORTS (Laporan Penjualan)
+  // ==========================================
+
+  static Future<Map<String, dynamic>> getAdminReports() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.adminReports), headers: _getHeaders())
+          .timeout(const Duration(seconds: 15));
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'summary': data['summary'] ?? {},
+          'daily_trend': data['daily_trend'] ?? [],
+          'top_customers': data['top_customers'] ?? [],
+        };
+      }
+      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+    } catch (e) {
+      return {'success': false, 'summary': {}, 'daily_trend': [], 'top_customers': []};
+    }
+  }
+
+  // ==========================================
+  // ADMIN DELETE VOUCHER & PROMO
+  // ==========================================
+
+  static Future<Map<String, dynamic>> adminDeleteVoucher(int id) async {
+    try {
+      final response = await http
+          .delete(Uri.parse(ApiConstants.adminDeleteVoucher(id)), headers: _getHeaders())
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      return {'success': data['success'] ?? false, 'message': data['message'] ?? ''};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> adminDeletePromo(int id) async {
+    try {
+      final response = await http
+          .delete(Uri.parse(ApiConstants.adminDeletePromo(id)), headers: _getHeaders())
+          .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
+      return {'success': data['success'] ?? false, 'message': data['message'] ?? ''};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
     }
   }
 }

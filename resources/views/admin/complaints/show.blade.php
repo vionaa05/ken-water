@@ -44,20 +44,19 @@
         </div>
         @endif
 
-        <!-- Form Update Status -->
-        @if($complaint->status !== 'selesai')
+        <!-- Form Update Status & Tindak Lanjut -->
         <div class="card p-6">
-            <h3 class="font-bold text-gray-900 mb-4">Perbarui Status Keluhan</h3>
+            <h3 class="font-bold text-gray-900 mb-4">
+                {{ $complaint->status === 'selesai' ? 'Perbarui Catatan Tindak Lanjut' : 'Perbarui Status Keluhan' }}
+            </h3>
             <form method="POST" action="{{ route('admin.complaints.update', $complaint) }}" class="space-y-4">
                 @csrf
                 @method('PUT')
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Baru</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
                     <select name="status" required class="input-field">
-                        @if($complaint->status === 'baru')
-                        <option value="diproses">Proses Keluhan</option>
-                        @endif
-                        <option value="selesai">Tandai Selesai</option>
+                        <option value="diproses" {{ $complaint->status === 'diproses' ? 'selected' : '' }}>Diproses</option>
+                        <option value="selesai" {{ $complaint->status === 'selesai' ? 'selected' : '' }}>Selesai</option>
                     </select>
                 </div>
                 <div>
@@ -73,7 +72,6 @@
                 </div>
             </form>
         </div>
-        @endif
     </div>
 
     <!-- Sidebar Pelanggan -->

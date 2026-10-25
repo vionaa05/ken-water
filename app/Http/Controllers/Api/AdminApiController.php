@@ -6,10 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Notification;
+use App\Models\Voucher;
+use App\Models\UserVoucher;
+use App\Models\Setting;
+use App\Models\Campaign;
+use App\Models\PersonalPromo;
 use App\Services\PointService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AdminApiController extends Controller
 {
@@ -200,12 +207,14 @@ class AdminApiController extends Controller
     public function orders(Request $request)
     {
         $statusCounts = [
-            'dipesan' => Order::where('source', 'online')->where('status', 'dipesan')->count(),
-            'diproses' => Order::where('source', 'online')->where('status', 'diproses')->count(),
-            'diantar' => Order::where('source', 'online')->where('status', 'diantar')->count(),
-            'siap_diambil' => Order::where('source', 'online')->where('status', 'siap_diambil')->count(),
-            'selesai' => Order::where('source', 'online')->where('status', 'selesai')->count(),
-            'dibatalkan' => Order::where('source', 'online')->where('status', 'dibatalkan')->count(),
+            'dipesan' => Order::where('status', 'dipesan')->count(),
+            'diproses' => Order::where('status', 'diproses')->count(),
+            'diantar' => Order::where('status', 'diantar')->count(),
+            'siap_diambil' => Order::where('status', 'siap_diambil')->count(),
+            'selesai' => Order::where('status', 'selesai')->count(),
+            'dibatalkan' => Order::where('status', 'dibatalkan')->count(),
+            'kasir' => Order::where('source', 'kasir')->count(),
+            'online' => Order::where('source', 'online')->count(),
         ];
 
         $orders = Order::with('user:id,name,phone,customer_id,loyalty_level', 'processor:id,name')
@@ -407,20 +416,38 @@ class AdminApiController extends Controller
             };
 
             $complaint->status = $status;
-            $note = $request->admin_notes ?: $request->response;
-            if ($note !== null) {
-                $complaint->response = $note;
-                $complaint->action_taken = $note;
+            $note = $request->input('admin_notes') ?? $request->input('response');
+            if ($note !== null && trim($note) !== '') {
+                $complaint->response = trim($note);
+                $complaint->action_taken = trim($note);
             }
+            $complaint->handled_by = $request->user()->id;
             if ($status === 'selesai') {
                 $complaint->resolved_at = now();
-                $complaint->handled_by = $request->user()->id;
             }
             $complaint->save();
 
+            // Kirim notifikasi ke pelanggan jika ada tanggapan
+            if ($complaint->user_id && !empty($complaint->response)) {
+                \App\Models\Notification::create([
+                    'user_id' => $complaint->user_id,
+                    'title' => $status === 'selesai' ? 'Keluhan Selesai Ditanggapi' : 'Keluhan Sedang Ditangani',
+                    'body' => "Keluhan \"{$complaint->category}\": {$complaint->response}",
+                    'type' => 'complaint_update',
+                    'reference_id' => $complaint->id,
+                    'reference_type' => 'complaint',
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Status keluhan berhasil diperbarui.',
+                'message' => 'Tindak lanjut dan status keluhan berhasil dicatat.',
+                'complaint' => [
+                    'id' => $complaint->id,
+                    'status' => $complaint->status,
+                    'admin_notes' => $complaint->response ?? $complaint->action_taken,
+                    'response' => $complaint->response,
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Keluhan tidak ditemukan.'], 404);
@@ -698,4 +725,618 @@ class AdminApiController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Tambah Pelanggan Baru dari Admin Mobile
+     */
+    public function createCustomer(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'phone' => 'required|string|max:20|unique:users,phone',
+            'address' => 'required|string|max:255',
+            'birth_date' => 'nullable|date|before:today',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $now = Carbon::now();
+        $customer = User::create([
+            'name' => $request->name,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'birth_date' => $request->birth_date,
+            'password' => Hash::make($request->password),
+            'role' => 'pelanggan',
+            'customer_id' => User::generateCustomerId(),
+            'status' => 'aktif',
+            'loyalty_level' => 'bronze',
+            'points' => 0,
+            'current_period_start' => $now,
+            'registered_at' => $now,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pelanggan berhasil ditambahkan.',
+            'customer' => [
+                'id' => $customer->id,
+                'customer_id' => $customer->customer_id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+                'loyalty_level' => $customer->loyalty_level,
+                'points' => 0,
+                'status' => $customer->status,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Update Data Pelanggan dari Admin Mobile
+     */
+    public function updateCustomer(Request $request, $id)
+    {
+        $customer = User::where('role', 'pelanggan')->find($id);
+        if (!$customer) {
+            return response()->json(['success' => false, 'message' => 'Pelanggan tidak ditemukan.'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'phone' => 'required|string|max:20|unique:users,phone,' . $customer->id,
+            'address' => 'required|string|max:255',
+            'birth_date' => 'nullable|date|before:today',
+            'status' => 'nullable|in:aktif,tidak_aktif',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $customer->name = $request->name;
+        $customer->phone = $request->phone;
+        $customer->address = $request->address;
+        if ($request->has('birth_date')) $customer->birth_date = $request->birth_date;
+        if ($request->has('status')) $customer->status = $request->status;
+        if ($request->filled('password')) $customer->password = Hash::make($request->password);
+        $customer->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data pelanggan berhasil diperbarui.',
+            'customer' => [
+                'id' => $customer->id,
+                'customer_id' => $customer->customer_id,
+                'name' => $customer->name,
+                'phone' => $customer->phone,
+                'address' => $customer->address,
+                'status' => $customer->status,
+                'loyalty_level' => $customer->loyalty_level,
+                'points' => (int) $customer->points,
+            ],
+        ]);
+    }
+
+    /**
+     * Hapus Pelanggan dari Admin Mobile
+     */
+    public function deleteCustomer(Request $request, $id)
+    {
+        $customer = User::where('role', 'pelanggan')->find($id);
+        if (!$customer) {
+            return response()->json(['success' => false, 'message' => 'Pelanggan tidak ditemukan.'], 404);
+        }
+
+        $customer->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Pelanggan berhasil dihapus.',
+        ]);
+    }
+
+    /**
+     * Dapatkan Pengaturan Sistem
+     */
+    public function settings(Request $request)
+    {
+        $settings = Setting::all()->pluck('value', 'key');
+        return response()->json([
+            'success' => true,
+            'settings' => [
+                'price_per_gallon' => (float) ($settings['price_per_gallon'] ?? 5000),
+                'points_per_gallon' => (int) ($settings['points_per_gallon'] ?? 1),
+                'inactive_days' => (int) ($settings['inactive_days'] ?? 30),
+                'silver_threshold' => (int) ($settings['silver_threshold'] ?? 10),
+                'gold_threshold' => (int) ($settings['gold_threshold'] ?? 30),
+            ],
+        ]);
+    }
+
+    /**
+     * Simpan Pengaturan Sistem
+     */
+    public function updateSettings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'price_per_gallon' => 'required|numeric|min:0',
+            'points_per_gallon' => 'required|integer|min:0',
+            'inactive_days' => 'required|integer|min:1',
+            'silver_threshold' => 'required|integer|min:1',
+            'gold_threshold' => 'required|integer|gt:silver_threshold',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $items = [
+            'price_per_gallon' => $request->price_per_gallon,
+            'points_per_gallon' => $request->points_per_gallon,
+            'inactive_days' => $request->inactive_days,
+            'silver_threshold' => $request->silver_threshold,
+            'gold_threshold' => $request->gold_threshold,
+        ];
+
+        foreach ($items as $k => $v) {
+            Setting::where('key', $k)->update(['value' => $v]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pengaturan sistem berhasil diperbarui.',
+            'settings' => $items,
+        ]);
+    }
+
+    /**
+     * Daftar Voucher (Admin)
+     */
+    public function vouchers(Request $request)
+    {
+        $vouchers = Voucher::latest()->get()->map(function ($v) {
+            return [
+                'id' => $v->id,
+                'code' => $v->code,
+                'name' => $v->name,
+                'description' => $v->description,
+                'discount_type' => $v->discount_type,
+                'discount_value' => (float) $v->discount_value,
+                'min_purchase' => (float) ($v->min_purchase ?? 0),
+                'valid_from' => $v->valid_from ? $v->valid_from->format('Y-m-d') : null,
+                'valid_until' => $v->valid_until ? $v->valid_until->format('Y-m-d') : null,
+                'usage_type' => $v->usage_type,
+                'is_active' => (bool) $v->is_active,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'vouchers' => $vouchers,
+        ]);
+    }
+
+    /**
+     * Tambah Voucher Baru (Admin)
+     */
+    public function createVoucher(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|unique:vouchers,code|max:30',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'discount_type' => 'required|in:nominal,persen',
+            'discount_value' => 'required|numeric|min:1',
+            'min_purchase' => 'nullable|numeric|min:0',
+            'valid_from' => 'required|date',
+            'valid_until' => 'required|date|after:valid_from',
+            'usage_type' => 'required|in:sekali,banyak',
+            'max_usage' => 'nullable|integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $voucher = Voucher::create($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Voucher berhasil ditambahkan.',
+            'voucher' => $voucher,
+        ], 201);
+    }
+
+    /**
+     * Assign / Bagikan Voucher ke Pelanggan (Admin)
+     */
+    public function assignVoucher(Request $request, $id)
+    {
+        $voucher = Voucher::findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'user_ids' => 'required|array',
+            'user_ids.*' => 'exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $users = User::whereIn('id', $request->user_ids)->get();
+        $assigned = 0;
+
+        foreach ($users as $user) {
+            $exists = UserVoucher::where('user_id', $user->id)
+                ->where('voucher_id', $voucher->id)
+                ->where('status', 'aktif')
+                ->exists();
+
+            if (!$exists) {
+                UserVoucher::create([
+                    'user_id' => $user->id,
+                    'voucher_id' => $voucher->id,
+                    'period_start' => $user->current_period_start,
+                ]);
+                $assigned++;
+
+                Notification::create([
+                    'user_id' => $user->id,
+                    'title' => 'Voucher Baru!',
+                    'body' => "Anda mendapatkan voucher {$voucher->name}. Cek menu Voucher Saya.",
+                    'type' => 'voucher',
+                ]);
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Voucher berhasil dibagikan ke {$assigned} pelanggan.",
+            'assigned_count' => $assigned,
+        ]);
+    }
+
+    /**
+     * Daftar Promo Personal (Admin)
+     */
+    public function promos(Request $request)
+    {
+        $promos = PersonalPromo::with('user:id,name,phone,customer_id')
+            ->latest()
+            ->take(50)
+            ->get()
+            ->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'customer_name' => $p->user ? $p->user->name : '-',
+                    'customer_id' => $p->user ? $p->user->customer_id : '-',
+                    'name' => $p->name,
+                    'description' => $p->description,
+                    'discount_type' => $p->discount_type,
+                    'discount_value' => (float) $p->discount_value,
+                    'valid_from' => $p->valid_from ? $p->valid_from->format('Y-m-d') : null,
+                    'valid_until' => $p->valid_until ? $p->valid_until->format('Y-m-d') : null,
+                    'is_used' => (bool) $p->is_used,
+                    'is_expired' => (bool) $p->is_expired,
+                    'is_active' => (bool) $p->isActive(),
+                ];
+            });
+
+        return response()->json(['success' => true, 'promos' => $promos]);
+    }
+
+    /**
+     * Toggle / Aktifkan Promo Personal (Admin)
+     */
+    public function togglePromo(Request $request, $id)
+    {
+        $promo = PersonalPromo::findOrFail($id);
+
+        // Jika promo expired atau lewat masa berlaku, perpanjang dan aktifkan kembali
+        if ($promo->is_expired || ($promo->valid_until && now()->gt($promo->valid_until->endOfDay()))) {
+            $promo->is_expired = false;
+            $promo->is_used = false;
+            $promo->valid_from = now()->startOfDay();
+            $promo->valid_until = now()->addDays(7)->endOfDay();
+        } else {
+            // Toggle status expired
+            $promo->is_expired = !$promo->is_expired;
+        }
+
+        $promo->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => $promo->isActive() ? 'Promo personal berhasil diaktifkan!' : 'Promo personal dinonaktifkan.',
+            'is_active' => $promo->isActive(),
+            'promo' => [
+                'id' => $promo->id,
+                'is_active' => $promo->isActive(),
+                'is_expired' => (bool) $promo->is_expired,
+                'valid_until' => $promo->valid_until ? $promo->valid_until->format('Y-m-d') : null,
+            ],
+        ]);
+    }
+
+    /**
+     * Tambah Promo Personal (Admin)
+     */
+    public function createPromo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'discount_type' => 'required|in:nominal,persen',
+            'discount_value' => 'required|numeric|min:1',
+            'valid_from' => 'required|date',
+            'valid_until' => 'required|date|after:valid_from',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user = User::findOrFail($request->user_id);
+        $promo = PersonalPromo::create([
+            'user_id' => $user->id,
+            'name' => $request->name,
+            'description' => $request->description,
+            'discount_type' => $request->discount_type,
+            'discount_value' => $request->discount_value,
+            'valid_from' => $request->valid_from,
+            'valid_until' => $request->valid_until,
+            'is_used' => false,
+            'is_expired' => false,
+            'period_start' => $user->current_period_start ?? now(),
+        ]);
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'Promo Spesial Untuk Anda!',
+            'body' => "Anda mendapat promo: {$promo->name}. Cek beranda Anda.",
+            'type' => 'promo',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Promo personal berhasil dibuat dan dikirim ke pelanggan.',
+            'promo' => $promo,
+        ], 201);
+    }
+
+    /**
+     * Daftar Kampanye WhatsApp CRM (Admin)
+     */
+    public function campaigns(Request $request)
+    {
+        $campaigns = Campaign::with(['creator:id,name', 'voucher:id,name,code'])
+            ->latest()
+            ->take(50)
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'type' => $c->type,
+                    'type_label' => match($c->type) {
+                        'promo_baru' => 'Promo Pelanggan Baru',
+                        'promo_loyal' => 'Promo Member Loyal',
+                        'ulang_tahun' => 'Ucapan Ulang Tahun',
+                        'ajakan_kembali' => 'Reaktivasi / Churn',
+                        default => ucfirst($c->type),
+                    },
+                    'target_segment' => $c->target_segment,
+                    'period_start' => $c->period_start ? $c->period_start->format('d M Y') : null,
+                    'period_end' => $c->period_end ? $c->period_end->format('d M Y') : null,
+                    'message_template' => $c->message_template,
+                    'target_count' => (int) $c->target_count,
+                    'sent_count' => (int) ($c->sent_count ?? 0),
+                    'voucher_name' => $c->voucher ? $c->voucher->name : null,
+                    'created_by' => $c->creator ? $c->creator->name : '-',
+                    'created_at' => $c->created_at->format('d M Y, H:i'),
+                ];
+            });
+
+        return response()->json(['success' => true, 'campaigns' => $campaigns]);
+    }
+
+    /**
+     * Buat Kampanye WhatsApp Baru (Admin)
+     */
+    public function createCampaign(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'type' => 'required|in:promo_baru,promo_loyal,ulang_tahun,ajakan_kembali',
+            'target_segment' => 'required|array',
+            'period_start' => 'required|date',
+            'period_end' => 'required|date|after:period_start',
+            'message_template' => 'required|string',
+            'voucher_id' => 'nullable|exists:vouchers,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $segments = $request->target_segment;
+        $type = $request->type;
+
+        // Hitung perkiraan target
+        $query = User::customers();
+        if (in_array('semua', $segments)) {
+            // all
+        } elseif (in_array('tidak_aktif', $segments) || $type === 'ajakan_kembali') {
+            $query->inactive();
+        } else {
+            $query->active();
+            if (in_array('loyal', $segments) || $type === 'promo_loyal') {
+                $query->whereIn('loyalty_level', ['silver', 'gold']);
+            }
+            if ($type === 'ulang_tahun') {
+                $query->whereMonth('birth_date', now()->month);
+            }
+        }
+        $targetCount = $query->count();
+
+        $campaign = Campaign::create([
+            'name' => $request->name,
+            'type' => $request->type,
+            'target_segment' => $request->target_segment,
+            'period_start' => $request->period_start,
+            'period_end' => $request->period_end,
+            'message_template' => $request->message_template,
+            'voucher_id' => $request->voucher_id,
+            'created_by' => $request->user()->id,
+            'target_count' => $targetCount,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Kampanye berhasil dibuat dengan target {$targetCount} pelanggan.",
+            'campaign' => $campaign,
+        ], 201);
+    }
+
+    /**
+     * Hapus Kampanye WhatsApp (Admin)
+     */
+    public function deleteCampaign(Request $request, $id)
+    {
+        $campaign = Campaign::find($id);
+        if (!$campaign) {
+            return response()->json(['success' => false, 'message' => 'Kampanye tidak ditemukan.'], 404);
+        }
+
+        $campaign->delete();
+        return response()->json(['success' => true, 'message' => 'Kampanye berhasil dihapus.']);
+    }
+
+    /**
+     * Laporan Penjualan Admin (Ringkasan, Tren, Top Pelanggan)
+     */
+    public function reports(Request $request)
+    {
+        try {
+            $today      = Carbon::today();
+            $thisMonth  = Carbon::now()->startOfMonth();
+            $lastMonth  = Carbon::now()->subMonth()->startOfMonth();
+            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth();
+
+            // Ringkasan bulan ini vs bulan lalu
+            $thisMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('total_price');
+            $lastMonthRevenue  = (float) Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('total_price');
+            $thisMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->sum('gallon_qty');
+            $lastMonthGallons  = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->sum('gallon_qty');
+            $thisMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
+            $lastMonthOrders   = (int)   Order::where('status', 'selesai')->whereBetween('order_date', [$lastMonth, $lastMonthEnd])->count();
+
+            // Tren 7 hari terakhir
+            $dailyTrend = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::today()->subDays($i);
+                $rev  = (float) Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('total_price');
+                $gal  = (int)   Order::where('status', 'selesai')->whereDate('order_date', $date)->sum('gallon_qty');
+                $dailyTrend[] = [
+                    'date'     => $date->format('d M'),
+                    'revenue'  => $rev,
+                    'gallons'  => $gal,
+                ];
+            }
+
+            // Top 5 pelanggan bulan ini berdasarkan total belanja
+            $topCustomers = Order::with('user:id,name,customer_id,loyalty_level')
+                ->where('status', 'selesai')
+                ->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])
+                ->whereNotNull('user_id')
+                ->select('user_id', DB::raw('SUM(total_price) as total_spent'), DB::raw('SUM(gallon_qty) as total_gallons'), DB::raw('COUNT(*) as order_count'))
+                ->groupBy('user_id')
+                ->orderByDesc('total_spent')
+                ->take(5)
+                ->get()
+                ->map(fn($o) => [
+                    'name'         => $o->user ? $o->user->name : 'Anonim',
+                    'customer_id'  => $o->user ? $o->user->customer_id : '-',
+                    'level'        => $o->user ? $o->user->loyalty_level : 'bronze',
+                    'total_spent'  => (float) $o->total_spent,
+                    'total_gallons'=> (int)   $o->total_gallons,
+                    'order_count'  => (int)   $o->order_count,
+                ]);
+
+            // Perbandingan sumber pesanan
+            $onlineCount = (int) Order::where('status', 'selesai')->where('source', 'online')->whereBetween('order_date', [$thisMonth, $today->copy()->endOfDay()])->count();
+            $kasirCount  = (int) Order::where('status', 'selesai')->where('source', 'kasir')->whereBetween('order_date',  [$thisMonth, $today->copy()->endOfDay()])->count();
+
+            return response()->json([
+                'success' => true,
+                'summary' => [
+                    'this_month_revenue'  => $thisMonthRevenue,
+                    'last_month_revenue'  => $lastMonthRevenue,
+                    'this_month_gallons'  => $thisMonthGallons,
+                    'last_month_gallons'  => $lastMonthGallons,
+                    'this_month_orders'   => $thisMonthOrders,
+                    'last_month_orders'   => $lastMonthOrders,
+                    'online_orders'       => $onlineCount,
+                    'kasir_orders'        => $kasirCount,
+                ],
+                'daily_trend'   => $dailyTrend,
+                'top_customers' => $topCustomers,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal memuat laporan: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Hapus Voucher (Admin)
+     */
+    public function deleteVoucher(Request $request, $id)
+    {
+        $voucher = \App\Models\Voucher::find($id);
+        if (!$voucher) {
+            return response()->json(['success' => false, 'message' => 'Voucher tidak ditemukan.'], 404);
+        }
+        $voucher->delete();
+        return response()->json(['success' => true, 'message' => 'Voucher berhasil dihapus.']);
+    }
+
+    /**
+     * Hapus Promo Personal (Admin)
+     */
+    public function deletePromo(Request $request, $id)
+    {
+        $promo = PersonalPromo::find($id);
+        if (!$promo) {
+            return response()->json(['success' => false, 'message' => 'Promo tidak ditemukan.'], 404);
+        }
+        $promo->delete();
+        return response()->json(['success' => true, 'message' => 'Promo berhasil dihapus.']);
+    }
 }
+
