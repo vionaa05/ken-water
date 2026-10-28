@@ -36,11 +36,18 @@ class AuthController extends Controller
         }
 
         $loginInput = trim($request->login);
+        $cleanPhone = preg_replace('/[^0-9]/', '', $loginInput);
+        $phoneVariants = array_unique(array_filter([
+            $loginInput,
+            $cleanPhone,
+            preg_replace('/^62/', '0', $cleanPhone),
+            preg_replace('/^0/', '62', $cleanPhone),
+        ]));
 
-        // Cari user berdasarkan email, no HP, atau customer_id
-        $user = User::where(function ($query) use ($loginInput) {
+        // Cari user berdasarkan email, no HP (dengan variasi awalan 08/62), atau customer_id
+        $user = User::where(function ($query) use ($loginInput, $phoneVariants) {
             $query->where('email', $loginInput)
-                  ->orWhere('phone', $loginInput)
+                  ->orWhereIn('phone', $phoneVariants)
                   ->orWhere('customer_id', $loginInput);
         })->first();
 
@@ -88,12 +95,10 @@ class AuthController extends Controller
         $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20|unique:users,phone',
-            'email' => 'nullable|email|unique:users,email',
             'address' => 'required|string|max:500',
             'password' => 'required|string|min:6|confirmed',
         ], [
             'phone.unique' => 'Nomor HP sudah terdaftar.',
-            'email.unique' => 'Email sudah terdaftar.',
         ]);
 
         if ($validator->fails()) {
@@ -108,7 +113,6 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $request->name,
             'phone' => $request->phone,
-            'email' => $request->email,
             'address' => $request->address,
             'password' => \Illuminate\Support\Facades\Hash::make($request->password),
             'role' => 'pelanggan',

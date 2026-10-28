@@ -16,7 +16,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
   final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
@@ -46,7 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     _animController.dispose();
     _nameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     _addressController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
@@ -60,7 +58,6 @@ class _RegisterScreenState extends State<RegisterScreen>
     final result = await ApiService.register(
       name: _nameController.text,
       phone: _phoneController.text,
-      email: _emailController.text.isEmpty ? null : _emailController.text,
       address: _addressController.text,
       password: _passwordController.text,
       passwordConfirmation: _confirmController.text,
@@ -191,13 +188,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                           keyboardType: TextInputType.phone,
                           validator: (v) =>
                               v!.isEmpty ? 'Nomor HP wajib diisi' : null,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildField(
-                          controller: _emailController,
-                          label: 'Email (opsional)',
-                          icon: Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
                         ),
                         const SizedBox(height: 16),
                         _buildField(

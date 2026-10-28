@@ -94,4 +94,28 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    // Check if there are any active orders on the screen
+    @php
+        $hasActiveOrders = $orders->contains(function($o) {
+            return in_array($o->status, ['dipesan', 'diproses', 'diantar', 'siap_diambil']);
+        });
+    @endphp
+
+    const hasActiveOrders = @json($hasActiveOrders);
+    if (!hasActiveOrders) return;
+
+    // Background poll every 8 seconds on order list page
+    setInterval(() => {
+        // Silently reload the page if user is focused on this tab
+        if (!document.hidden) {
+            window.location.reload();
+        }
+    }, 8000);
+})();
+</script>
+@endpush
 @endsection

@@ -31,7 +31,7 @@
                     <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                 </div>
                 <h1 class="text-2xl font-bold text-gray-900">Ken Water</h1>
-                <p class="text-gray-500 mt-1 text-xs">Depot Air Minum & Portal Loyalitas</p>
+                <p class="text-gray-500 mt-1 text-xs">Depot Air Minum Berkualitas</p>
             </div>
 
             @if (session('success'))
@@ -53,10 +53,10 @@
             <form method="POST" action="{{ route('login.submit') }}" class="space-y-4">
                 @csrf
                 <div>
-                    <label for="login" class="block text-sm font-medium text-gray-700 mb-1">Email atau Nomor HP</label>
+                    <label for="login" class="block text-sm font-medium text-gray-700 mb-1">Nomor HP atau WhatsApp</label>
                     <input type="text" id="login" name="login" value="{{ old('login') }}" required autofocus
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors bg-white/50"
-                        placeholder="Masukkan Email atau Nomor HP">
+                        placeholder="Masukkan Nomor HP atau WhatsApp">
                 </div>
 
                 <div>

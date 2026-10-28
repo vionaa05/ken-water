@@ -61,6 +61,17 @@
                 </div>
             </div>
 
+            <div>
+                <h3 class="font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Kontak & Bantuan Pelanggan</h3>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nomor WhatsApp Depot</label>
+                    <div class="flex items-center gap-3">
+                        <input type="text" name="depot_whatsapp" value="{{ $settings->get('depot_whatsapp')?->value ?? '6281234567890' }}" required class="input-field flex-1" placeholder="Contoh: 6281234567890">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Nomor ini digunakan pelanggan untuk fitur "Tanya via WhatsApp Depot" di Web & Aplikasi Mobile (Gunakan kode negara, contoh: 6281234567890).</p>
+                </div>
+            </div>
+
             <div class="pt-4 border-t border-gray-200">
                 <button type="submit" class="btn-primary">Simpan Pengaturan</button>
             </div>

@@ -22,7 +22,10 @@ class SettingController extends Controller
             'price_per_gallon' => 'required|numeric|min:0',
             'silver_threshold' => 'required|integer|min:1',
             'gold_threshold' => 'required|integer|gt:silver_threshold',
+            'depot_whatsapp' => 'nullable|string|max:30',
         ]);
+
+        $waNumber = preg_replace('/[^0-9]/', '', $request->depot_whatsapp ?? '6281234567890');
 
         $settings = [
             'inactive_days' => $request->inactive_days,
@@ -30,12 +33,22 @@ class SettingController extends Controller
             'price_per_gallon' => $request->price_per_gallon,
             'silver_threshold' => $request->silver_threshold,
             'gold_threshold' => $request->gold_threshold,
+            'depot_whatsapp' => $waNumber,
         ];
 
         foreach ($settings as $key => $value) {
-            Setting::where('key', $key)->update(['value' => $value]);
+            Setting::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
+            );
         }
 
-        return back()->with('success', 'Pengaturan sistem berhasil diperbarui.');
+        // Sinkronkan juga nomor telepon akun Admin yang sedang login
+        $admin = auth()->user();
+        if ($admin && $admin->role === 'admin' && !empty($waNumber)) {
+            $admin->update(['phone' => $waNumber]);
+        }
+
+        return back()->with('success', 'Pengaturan sistem & nomor telepon akun Admin berhasil diperbarui.');
     }
 }

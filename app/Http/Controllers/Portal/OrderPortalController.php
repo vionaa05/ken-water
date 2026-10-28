@@ -147,6 +147,19 @@ class OrderPortalController extends Controller
         return view('portal.orders.show', compact('order'));
     }
 
+    public function status(Order $order)
+    {
+        if ($order->user_id !== auth()->id()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return response()->json([
+            'id' => $order->id,
+            'status' => $order->status,
+            'is_finished' => in_array($order->status, ['selesai', 'dibatalkan']),
+        ]);
+    }
+
     public function transactions()
     {
         $user = auth()->user();

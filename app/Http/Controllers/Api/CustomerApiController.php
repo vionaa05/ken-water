@@ -644,17 +644,23 @@ class CustomerApiController extends Controller
         try {
             $price = Setting::where('key', 'price_per_gallon')->value('value') ?? 5000;
             $points = Setting::where('key', 'points_per_gallon')->value('value') ?? 1;
+            $wa = Setting::where('key', 'depot_whatsapp')->value('value') ?? '6281234567890';
             return response()->json([
                 'success' => true,
                 'settings' => [
                     'price_per_gallon' => (float) $price,
                     'points_per_gallon' => (int) $points,
+                    'depot_whatsapp' => (string) $wa,
                 ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => true,
-                'settings' => ['price_per_gallon' => 5000.0, 'points_per_gallon' => 1],
+                'settings' => [
+                    'price_per_gallon' => 5000.0,
+                    'points_per_gallon' => 1,
+                    'depot_whatsapp' => '6281234567890',
+                ],
             ]);
         }
     }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../constants/app_colors.dart';
 import '../../../models/user_model.dart';
 import '../../../models/order_model.dart';
@@ -34,6 +36,8 @@ class _HomeTabState extends State<HomeTab> {
   int _unreadNotifs = 0;
   bool _isLoading = true;
   bool _isDownloading = false;
+  Timer? _pollingTimer;
+  String _depotWhatsapp = '6281234567890';
   final GlobalKey _cardRepaintKey = GlobalKey();
 
   final currencyFormatter =
@@ -44,6 +48,35 @@ class _HomeTabState extends State<HomeTab> {
     super.initState();
     _user = StorageService.getUser();
     _loadData();
+    _startPolling();
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPolling() {
+    // Poll every 7 seconds quietly in background
+    _pollingTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (mounted) {
+        _silentReload();
+      }
+    });
+  }
+
+  Future<void> _silentReload() async {
+    final cardResult = await ApiService.getCustomerMemberCard();
+    final ordersList = await ApiService.getCustomerOrders();
+    final notifResult = await ApiService.getNotifications();
+    if (mounted) {
+      setState(() {
+        if (cardResult['success'] == true) _cardData = cardResult['card'];
+        _orders = ordersList;
+        _unreadNotifs = notifResult['unread_count'] ?? 0;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -52,12 +85,16 @@ class _HomeTabState extends State<HomeTab> {
     final ordersList = await ApiService.getCustomerOrders();
     final notifResult = await ApiService.getNotifications();
     final promosList = await ApiService.getCustomerPromos();
+    final settingsRes = await ApiService.getCustomerSettings();
     if (mounted) {
       setState(() {
         if (cardResult['success'] == true) _cardData = cardResult['card'];
         _orders = ordersList;
         _unreadNotifs = notifResult['unread_count'] ?? 0;
         _activePromos = promosList;
+        if (settingsRes['success'] == true && settingsRes['settings']?['depot_whatsapp'] != null) {
+          _depotWhatsapp = settingsRes['settings']['depot_whatsapp'].toString();
+        }
         _isLoading = false;
       });
     }
@@ -277,7 +314,9 @@ class _HomeTabState extends State<HomeTab> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'selesai': return AppColors.success;
-      case 'dikirim': return AppColors.info;
+      case 'diantar':
+      case 'dikirim':
+      case 'siap_diambil': return AppColors.info;
       case 'diproses': return AppColors.warning;
       case 'dipesan': return AppColors.accent;
       case 'dibatalkan': return AppColors.error;
@@ -285,18 +324,7 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  void _showOrderDetailModal(OrderModel order) {
-    final statusSteps = ['dipesan', 'diproses', 'dikirim', 'selesai'];
-    final statusLabels = ['Dipesan', 'Diproses', 'Diantar', 'Selesai'];
-    final statusIcons = [
-      Icons.receipt_long_rounded,
-      Icons.hourglass_top_rounded,
-      Icons.local_shipping_rounded,
-      Icons.check_circle_rounded,
-    ];
-    final currentIdx = statusSteps.indexOf(order.status.toLowerCase());
-    final isCancelled = order.status.toLowerCase() == 'dibatalkan';
-
+  void _showOrderDetailModal(OrderModel initialOrder) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -304,28 +332,82 @@ class _HomeTabState extends State<HomeTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        return SafeArea(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.85,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
+        OrderModel order = initialOrder;
+        Timer? modalTimer;
+
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            // Jalankan polling khusus modal selama modal terbuka
+            modalTimer ??= Timer.periodic(const Duration(seconds: 3), (_) async {
+              final latestOrders = await ApiService.getCustomerOrders();
+              if (modalContext.mounted) {
+                final match = latestOrders.where((o) => o.id == order.id);
+                if (match.isNotEmpty && match.first.status != order.status) {
+                  setModalState(() {
+                    order = match.first;
+                  });
+                  // Sinkronkan juga daftar pesanan di home tab utama
+                  if (mounted) {
+                    setState(() {
+                      _orders = latestOrders;
+                    });
+                  }
+                }
+              }
+            });
+
+            final isDelivery = order.deliveryMethod == 'antar';
+            final thirdStepKey = isDelivery ? 'diantar' : 'siap_diambil';
+            final thirdStepLabel = isDelivery ? 'Diantar' : 'Siap Diambil';
+            final thirdStepIcon =
+                isDelivery ? Icons.local_shipping_rounded : Icons.store_rounded;
+
+            final statusSteps = ['dipesan', 'diproses', thirdStepKey, 'selesai'];
+            final statusLabels = ['Dipesan', 'Diproses', thirdStepLabel, 'Selesai'];
+            final statusIcons = [
+              Icons.receipt_long_rounded,
+              Icons.hourglass_top_rounded,
+              thirdStepIcon,
+              Icons.check_circle_rounded,
+            ];
+
+            String currentStatusNormalized = order.status.toLowerCase();
+            if (currentStatusNormalized == 'dikirim') {
+              currentStatusNormalized = 'diantar';
+            }
+            int currentIdx = statusSteps.indexOf(currentStatusNormalized);
+            if (currentIdx == -1 &&
+                (currentStatusNormalized == 'diantar' ||
+                    currentStatusNormalized == 'siap_diambil')) {
+              currentIdx = 2;
+            }
+            final isCancelled = order.status.toLowerCase() == 'dibatalkan';
+
+            return PopScope(
+              onPopInvokedWithResult: (_, __) => modalTimer?.cancel(),
+              child: SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.85,
                   ),
-                  const SizedBox(height: 16),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Handle bar
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
                   // Header
                   Row(
@@ -565,14 +647,59 @@ class _HomeTabState extends State<HomeTab> {
                     ),
                   ],
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Tanya via WhatsApp Depot (Sama seperti Web Portal)
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx),
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        final orderCode = '#ORD-${order.id.toString().padLeft(5, '0')}';
+                        final msg = Uri.encodeComponent('Halo Ken Water, saya mau tanya mengenai pesanan $orderCode');
+                        final waNumber = _depotWhatsapp.isNotEmpty ? _depotWhatsapp : '6281234567890';
+                        final waUrl = Uri.parse('https://wa.me/$waNumber?text=$msg');
+                        try {
+                          await launchUrl(waUrl, mode: LaunchMode.externalApplication);
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tidak dapat membuka WhatsApp'),
+                                backgroundColor: AppColors.error,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 18),
+                      label: Text(
+                        'Tanya via WhatsApp Depot',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: const Color(0xFF059669), // Emerald 600
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: const EdgeInsets.symmetric(vertical: 13),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
@@ -580,14 +707,17 @@ class _HomeTabState extends State<HomeTab> {
                           style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white)),
+                              color: AppColors.textPrimary)),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        );
+        ),
+      );
+    },
+  );
       },
     );
   }

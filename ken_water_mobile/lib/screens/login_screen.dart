@@ -192,7 +192,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Depot Air Minum & Portal Loyalitas',
+                    'Depot Air Minum Berkualitas',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
@@ -201,11 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 36),
 
-                  // Input Email / Phone / ID
+                  //  / Phone / ID
                   TextFormField(
                     controller: _loginController,
                     decoration: InputDecoration(
-                      labelText: 'ID / Email / Nomor HP',
+                      labelText: 'ID / Nomor HP / WhatsApp',
                       hintText: 'Contoh: 08123456789 atau KW-00001',
                       prefixIcon: const Icon(Icons.person_outline),
                       filled: true,
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'Harap isi ID, email, atau no. HP'
+                        ? 'Harap isi ID atau no. HP'
                         : null,
                   ),
                   const SizedBox(height: 16),
@@ -314,13 +314,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 24),
+                 const SizedBox(height: 24),
                   Center(
                     child: Text(
-                      'Server: ${StorageService.getBaseUrl()}',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                    ),
+                     'Server: ${StorageService.getBaseUrl()}',
+                     style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                   ),
+                 ),
                 ],
               ),
             ),

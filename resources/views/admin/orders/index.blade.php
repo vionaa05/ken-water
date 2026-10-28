@@ -110,4 +110,25 @@
     <div class="px-4 py-3 border-t border-gray-100 bg-gray-50">{{ $orders->links() }}</div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    // Only poll when no search query is typed by admin to avoid interrupting typing
+    const searchVal = document.querySelector('input[name="search"]')?.value.trim();
+    if (searchVal) return;
+
+    // Check if there are active orders
+    const hasActive = {{ $orders->contains(fn($o) => in_array($o->status, ['dipesan', 'diproses', 'diantar', 'siap_diambil'])) ? 'true' : 'false' }};
+    if (!hasActive && {{ $statusCounts['dipesan'] ?? 0 }} === 0) return;
+
+    // Background poll every 10 seconds for admin table
+    setInterval(() => {
+        if (!document.hidden) {
+            window.location.reload();
+        }
+    }, 10000);
+})();
+</script>
+@endpush
 @endsection

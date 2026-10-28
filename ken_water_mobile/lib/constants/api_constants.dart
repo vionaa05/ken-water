@@ -1,8 +1,8 @@
 class ApiConstants {
   // Default fallback base URL:
   // - 10.0.2.2 untuk Android Emulator
-  // - Ganti dengan IP LAN PC (misal: 192.168.1.15) saat menggunakan HP fisik via WiFi
-  static String baseUrl = 'http://192.168.1.11:8000/api';
+  // - Ganti dengan IP LAN PC (misal: 192.168.1.7) saat menggunakan HP fisik via WiFi
+  static String baseUrl = 'http://192.168.1.7:8000/api';
 
   static void setBaseUrl(String url) {
     if (url.endsWith('/')) {

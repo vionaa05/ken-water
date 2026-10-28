@@ -26,19 +26,30 @@ class LoginController extends Controller
             'password.required' => 'Password wajib diisi.',
         ]);
 
-        $loginField = $request->login;
-        $credentials = [];
+        $loginField = trim($request->login);
 
-        // Coba login dengan email atau nomor HP
+        // Coba login dengan email
         if (filter_var($loginField, FILTER_VALIDATE_EMAIL)) {
-            $credentials = ['email' => $loginField, 'password' => $request->password];
+            if (Auth::attempt(['email' => $loginField, 'password' => $request->password], $request->boolean('remember'))) {
+                $request->session()->regenerate();
+                return $this->redirectByRole(Auth::user()->role);
+            }
         } else {
-            $credentials = ['phone' => $loginField, 'password' => $request->password];
-        }
+            // Normalisasi variasi nomor HP (misal: 0812... vs 62812... vs +62812...)
+            $cleanPhone = preg_replace('/[^0-9]/', '', $loginField);
+            $variants = array_unique(array_filter([
+                $loginField,
+                $cleanPhone,
+                preg_replace('/^62/', '0', $cleanPhone),
+                preg_replace('/^0/', '62', $cleanPhone),
+            ]));
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return $this->redirectByRole(Auth::user()->role);
+            foreach ($variants as $phoneCandidate) {
+                if (Auth::attempt(['phone' => $phoneCandidate, 'password' => $request->password], $request->boolean('remember'))) {
+                    $request->session()->regenerate();
+                    return $this->redirectByRole(Auth::user()->role);
+                }
+            }
         }
 
         return back()->withErrors([

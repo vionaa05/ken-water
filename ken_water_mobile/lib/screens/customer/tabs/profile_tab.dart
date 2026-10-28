@@ -371,6 +371,14 @@ class _ProfileTabState extends State<ProfileTab> {
                         subtitle: 'Perbarui kata sandi akun pelanggan Anda',
                         onTap: _showChangePasswordModal,
                       ),
+                      const SizedBox(height: 10),
+                      _buildMenuTile(
+                        icon: Icons.wifi_tethering_rounded,
+                        iconColor: Colors.deepPurple,
+                        title: 'Pengaturan Server URL',
+                        subtitle: 'Ubah alamat IP server API backend (${StorageService.getBaseUrl()})',
+                        onTap: _showServerUrlDialog,
+                      ),
                     ],
 
                     const SizedBox(height: 24),
@@ -693,6 +701,58 @@ class _ProfileTabState extends State<ProfileTab> {
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: AppColors.textSecondary));
+  }
+
+  void _showServerUrlDialog() {
+    final ipController = TextEditingController(text: StorageService.getBaseUrl());
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Pengaturan Server URL'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'IP Server backend saat ini (gunakan IP WiFi PC Anda, misal http://192.168.1.7:8000/api):',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: ipController,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'http://192.168.1.7:8000/api',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newUrl = ipController.text.trim();
+              if (newUrl.isNotEmpty) {
+                await StorageService.saveBaseUrl(newUrl);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Server URL diubah ke: $newUrl'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildProfileField({

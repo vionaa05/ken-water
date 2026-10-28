@@ -135,6 +135,7 @@ Route::prefix('portal')->name('portal.')->middleware(['auth', 'role:pelanggan'])
         Route::post('/order', [OrderPortalController::class, 'store'])->name('order.store');
         Route::get('/orders', [OrderPortalController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderPortalController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/status', [OrderPortalController::class, 'status'])->name('orders.status');
 
         // Riwayat Transaksi
         Route::get('/transactions', [OrderPortalController::class, 'transactions'])->name('transactions');

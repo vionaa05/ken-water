@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,6 +25,8 @@ class AdminOrdersTabState extends State<AdminOrdersTab> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
+  Timer? _pollingTimer;
+
   final currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
@@ -34,12 +37,34 @@ class AdminOrdersTabState extends State<AdminOrdersTab> {
   void initState() {
     super.initState();
     _loadOrders();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _startPolling() {
+    // Background polling every 8 seconds when admin is viewing orders
+    _pollingTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      // Don't disturb if admin is typing search or loading
+      if (mounted && _searchQuery.isEmpty && !_isLoading) {
+        _silentReloadOrders();
+      }
+    });
+  }
+
+  Future<void> _silentReloadOrders() async {
+    final data = await ApiService.getAdminOrdersData();
+    if (mounted) {
+      setState(() {
+        _allOrders = (data['orders'] as List<OrderModel>?) ?? [];
+        _statusCounts = (data['status_counts'] as Map<String, dynamic>?) ?? {};
+      });
+    }
   }
 
   Future<void> _loadOrders() async {
