@@ -759,10 +759,10 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                       children: [
                         Expanded(
                           child: _buildMetricCard(
-                            title: 'Galon Hari Ini',
-                            value: '${_summary?['today_gallons'] ?? 0}',
-                            unit: 'Galon',
-                            icon: Icons.water_drop_rounded,
+                            title: 'Total Pelanggan',
+                            value: '${_summary?['total_customers'] ?? 0}',
+                            unit: 'Member',
+                            icon: Icons.people_alt_rounded,
                             iconColor: const Color(0xFF0284C7),
                             bgColor: const Color(0xFFE0F2FE),
                           ),
@@ -770,12 +770,40 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildMetricCard(
-                            title: 'Total Pelanggan',
-                            value: '${_summary?['total_customers'] ?? 0}',
-                            unit: 'Member',
-                            icon: Icons.people_alt_rounded,
-                            iconColor: const Color(0xFF8B5CF6),
-                            bgColor: const Color(0xFFEDE9FE),
+                            title: 'Pelanggan Aktif',
+                            value: '${_summary?['active_customers'] ?? 0}',
+                            unit: 'Aktif',
+                            icon: Icons.check_circle_rounded,
+                            iconColor: const Color(0xFF10B981),
+                            bgColor: const Color(0xFFD1FAE5),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildMetricCard(
+                            title: 'Tidak Aktif',
+                            value: '${_summary?['inactive_customers'] ?? 0}',
+                            unit: 'Perlu Reaktivasi',
+                            icon: Icons.person_off_rounded,
+                            iconColor: const Color(0xFFEF4444),
+                            bgColor: const Color(0xFFFEE2E2),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildMetricCard(
+                            title: 'Pelanggan Loyal',
+                            value: '${_summary?['loyal_customers'] ?? 0}',
+                            unit: 'Silver & Gold',
+                            icon: Icons.workspace_premium_rounded,
+                            iconColor: const Color(0xFFF59E0B),
+                            bgColor: const Color(0xFFFEF3C7),
                           ),
                         ),
                       ],
@@ -791,19 +819,19 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             value: '${_summary?['pending_orders_count'] ?? 0}',
                             unit: 'Menunggu',
                             icon: Icons.access_time_filled_rounded,
-                            iconColor: const Color(0xFFF59E0B),
-                            bgColor: const Color(0xFFFEF3C7),
+                            iconColor: const Color(0xFF8B5CF6),
+                            bgColor: const Color(0xFFEDE9FE),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildMetricCard(
-                            title: 'Poin Beredar',
-                            value: '${_summary?['total_points_issued'] ?? 0}',
-                            unit: 'Poin',
-                            icon: Icons.stars_rounded,
-                            iconColor: const Color(0xFF10B981),
-                            bgColor: const Color(0xFFD1FAE5),
+                            title: 'Galon Hari Ini',
+                            value: '${_summary?['today_gallons'] ?? 0}',
+                            unit: 'Galon',
+                            icon: Icons.water_drop_rounded,
+                            iconColor: const Color(0xFF0284C7),
+                            bgColor: const Color(0xFFE0F2FE),
                           ),
                         ),
                       ],
