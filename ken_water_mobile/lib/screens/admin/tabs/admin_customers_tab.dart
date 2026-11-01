@@ -11,16 +11,19 @@ import '../../../constants/app_colors.dart';
 import '../../../services/api_service.dart';
 
 class AdminCustomersTab extends StatefulWidget {
+  static final GlobalKey<AdminCustomersTabState> globalKey = GlobalKey<AdminCustomersTabState>();
+
   const AdminCustomersTab({super.key});
 
   @override
-  State<AdminCustomersTab> createState() => _AdminCustomersTabState();
+  State<AdminCustomersTab> createState() => AdminCustomersTabState();
 }
 
-class _AdminCustomersTabState extends State<AdminCustomersTab> {
+class AdminCustomersTabState extends State<AdminCustomersTab> {
   List<dynamic> _customers = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  String _selectedStatusFilter = 'all'; // 'all', 'aktif', 'tidak_aktif', 'loyal'
   final TextEditingController _searchController = TextEditingController();
 
   // Segmentation state
@@ -29,6 +32,15 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
   List<dynamic> _chartLevels = [];
   bool _isSegLoading = true;
   String _selectedSegFilter = 'Semua';
+
+  void setFilter(String filterKey) {
+    if (mounted) {
+      setState(() {
+        _selectedStatusFilter = filterKey;
+      });
+      _loadCustomers();
+    }
+  }
 
   @override
   void initState() {
@@ -45,7 +57,22 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
 
   Future<void> _loadCustomers() async {
     setState(() => _isLoading = true);
-    final list = await ApiService.getAdminCustomers(search: _searchQuery);
+    String statusParam = '';
+    String levelParam = '';
+
+    if (_selectedStatusFilter == 'aktif') {
+      statusParam = 'aktif';
+    } else if (_selectedStatusFilter == 'tidak_aktif') {
+      statusParam = 'tidak_aktif';
+    } else if (_selectedStatusFilter == 'loyal') {
+      levelParam = 'loyal';
+    }
+
+    final list = await ApiService.getAdminCustomers(
+      search: _searchQuery,
+      status: statusParam,
+      level: levelParam,
+    );
     if (mounted) {
       setState(() {
         _customers = list;
@@ -1395,6 +1422,27 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
           ),
         ),
 
+        // Filter Chips (Semua, Aktif, Tidak Aktif, Loyal)
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
+          alignment: Alignment.centerLeft,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildStatusFilterChip('all', 'Semua Member', Icons.people_outline),
+                const SizedBox(width: 8),
+                _buildStatusFilterChip('aktif', 'Aktif', Icons.check_circle_outline),
+                const SizedBox(width: 8),
+                _buildStatusFilterChip('tidak_aktif', 'Tidak Aktif', Icons.person_off_outlined),
+                const SizedBox(width: 8),
+                _buildStatusFilterChip('loyal', 'Loyal (Silver/Gold)', Icons.workspace_premium_outlined),
+              ],
+            ),
+          ),
+        ),
+
         // Total Badge Bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1840,6 +1888,42 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
           });
         },
       ),
+    );
+  }
+
+  Widget _buildStatusFilterChip(String key, String label, IconData icon) {
+    final isSelected = _selectedStatusFilter == key;
+    Color activeColor = AppColors.primary;
+    if (key == 'aktif') activeColor = const Color(0xFF10B981);
+    if (key == 'tidak_aktif') activeColor = const Color(0xFFEF4444);
+    if (key == 'loyal') activeColor = const Color(0xFFF59E0B);
+
+    return FilterChip(
+      selected: isSelected,
+      avatar: Icon(
+        icon,
+        size: 16,
+        color: isSelected ? Colors.white : activeColor,
+      ),
+      label: Text(label),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : AppColors.textPrimary,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+        fontSize: 12,
+      ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      selectedColor: activeColor,
+      checkmarkColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? activeColor : const Color(0xFFE2E8F0),
+        ),
+      ),
+      onSelected: (_) {
+        setFilter(key);
+      },
     );
   }
 

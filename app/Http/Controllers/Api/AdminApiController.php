@@ -40,7 +40,11 @@ class AdminApiController extends Controller
         $activeCustomers = User::customers()->active()->count();
         $inactiveCustomers = User::customers()->inactive()->count();
         $loyalCustomers = User::loyalCustomers()->count();
-        $pendingOrdersCount = Order::where('status', 'dipesan')->count();
+        $activeOrdersCount = Order::whereNotIn('status', ['selesai', 'dibatalkan'])->count();
+
+        // Keluhan baru/diproses & Reward penukaran pending
+        $pendingComplaintsCount = \App\Models\Complaint::whereIn('status', ['baru', 'diproses'])->count();
+        $pendingRedemptionsCount = \App\Models\RewardRedemption::where('status', 'pending')->count();
 
         // Transaksi terbaru
         $recentOrders = Order::with('user:id,name,phone,customer_id')
@@ -76,7 +80,10 @@ class AdminApiController extends Controller
                 'active_customers' => $activeCustomers,
                 'inactive_customers' => $inactiveCustomers,
                 'loyal_customers' => $loyalCustomers,
-                'pending_orders_count' => $pendingOrdersCount,
+                'pending_orders_count' => $activeOrdersCount,
+                'active_orders_count' => $activeOrdersCount,
+                'pending_complaints_count' => $pendingComplaintsCount,
+                'pending_redemptions_count' => $pendingRedemptionsCount,
             ],
             'recent_orders' => $recentOrders,
         ]);
@@ -144,10 +151,12 @@ class AdminApiController extends Controller
     public function createTransaction(Request $request)
     {
         $request->validate([
-            'customer_id' => 'required', // Bisa ID user atau string customer_id
-            'gallon_qty' => 'required|integer|min:1|max:100',
-            'payment_method' => 'required|in:tunai,transfer,qris',
-            'notes' => 'nullable|string|max:500',
+            'customer_id'     => 'required',
+            'gallon_qty'      => 'required|integer|min:1|max:100',
+            'payment_method'  => 'required|in:tunai,transfer,qris',
+            'delivery_method' => 'nullable|in:antar,ambil_sendiri',
+            'delivery_address'=> 'nullable|required_if:delivery_method,antar|string|max:500',
+            'notes'           => 'nullable|string|max:500',
         ]);
 
         $customer = User::where('role', 'pelanggan')
@@ -175,7 +184,8 @@ class AdminApiController extends Controller
                 'gallon_qty' => $qty,
                 'unit_price' => $pricePerGallon,
                 'total_price' => $totalPrice,
-                'delivery_method' => 'ambil_sendiri',
+                'delivery_method'  => $request->delivery_method ?? 'ambil_sendiri',
+                'delivery_address' => ($request->delivery_method === 'antar') ? $request->delivery_address : null,
                 'payment_method' => $request->payment_method,
                 'notes' => $request->notes,
                 'status' => 'selesai',
@@ -200,15 +210,17 @@ class AdminApiController extends Controller
                 'success' => true,
                 'message' => 'Transaksi berhasil dicatat dan poin berhasil ditambahkan!',
                 'order' => [
-                    'id' => $order->id,
-                    'customer_name' => $customer->name,
-                    'gallon_qty' => $qty,
-                    'total_price' => $totalPrice,
-                    'payment_method' => $request->payment_method,
-                    'added_points' => $addedPoints,
+                    'id'                  => $order->id,
+                    'customer_name'       => $customer->name,
+                    'gallon_qty'          => $qty,
+                    'total_price'         => $totalPrice,
+                    'payment_method'      => $request->payment_method,
+                    'delivery_method'     => $order->delivery_method,
+                    'delivery_address'    => $order->delivery_address,
+                    'added_points'        => $addedPoints,
                     'customer_points_now' => (int) $customer->points,
-                    'customer_level' => $customer->loyalty_level,
-                    'time' => $order->order_date->format('d/m/Y H:i'),
+                    'customer_level'      => $customer->loyalty_level,
+                    'time'                => $order->order_date->format('d/m/Y H:i'),
                 ],
             ]);
         });
@@ -357,7 +369,11 @@ class AdminApiController extends Controller
                 $q->where('status', $status);
             })
             ->when($level, function ($q) use ($level) {
-                $q->where('loyalty_level', $level);
+                if ($level === 'loyal') {
+                    $q->whereIn('loyalty_level', ['silver', 'gold']);
+                } else {
+                    $q->where('loyalty_level', $level);
+                }
             })
             ->latest()
             ->take(50)

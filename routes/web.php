@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\LoyaltyController;
 use App\Http\Controllers\Admin\CampaignController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\KasirController;
 use App\Http\Controllers\Portal\HomeController;
 use App\Http\Controllers\Portal\OrderPortalController;
 use App\Http\Controllers\Portal\RewardPortalController;
@@ -56,6 +57,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Kasir Depot
+    Route::get('/kasir', [KasirController::class, 'index'])->name('kasir.index');
+    Route::post('/kasir', [KasirController::class, 'store'])->name('kasir.store');
 
     // Manajemen Pelanggan
     Route::resource('customers', CustomerController::class);

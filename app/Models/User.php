@@ -64,6 +64,19 @@ class User extends Authenticatable
         return $this->hasMany(PointMutation::class);
     }
 
+    /**
+     * Total poin yang pernah diperoleh di periode akun saat ini (akumulasi tanpa dikurangi penukaran reward)
+     */
+    public function getTotalEarnedPointsCurrentPeriodAttribute(): int
+    {
+        return (int) $this->pointMutations()
+            ->when($this->current_period_start, function ($q, $start) {
+                $q->where('created_at', '>=', $start);
+            })
+            ->where('type', 'tambah')
+            ->sum('amount');
+    }
+
     public function complaints()
     {
         return $this->hasMany(Complaint::class);

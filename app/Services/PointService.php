@@ -74,29 +74,43 @@ class PointService
                 'reference_type' => $referenceType,
             ]);
 
-            // Update loyalty level setelah pengurangan poin
-            $this->updateLoyaltyLevel($user, $newBalance);
+            // Catatan: Loyalty level sengaja TIDAK diturunkan saat penukaran reward
+            // agar pelanggan bebas menikmati reward tanpa takut kehilangan status level.
         });
 
         return true;
     }
 
     /**
-     * Update level loyalitas berdasarkan total poin
+     * Update level loyalitas berdasarkan akumulasi perolehan poin (hanya naik level, tidak pernah turun saat belanja)
      */
-    public function updateLoyaltyLevel(User $user, int $currentPoints): void
+    public function updateLoyaltyLevel(User $user, ?int $currentPoints = null): void
     {
         $silverThreshold = (int) setting('silver_threshold', 50);
         $goldThreshold = (int) setting('gold_threshold', 150);
 
+        // Gunakan nilai tertinggi antara saldo saat ini dan akumulasi poin yang pernah didapat di periode ini
+        $qualificationPoints = max($user->points, $user->total_earned_points_current_period);
+
         $newLevel = 'bronze';
-        if ($currentPoints >= $goldThreshold) {
+        if ($qualificationPoints >= $goldThreshold) {
             $newLevel = 'gold';
-        } elseif ($currentPoints >= $silverThreshold) {
+        } elseif ($qualificationPoints >= $silverThreshold) {
             $newLevel = 'silver';
         }
 
-        if ($user->loyalty_level !== $newLevel) {
+        // Hirarki level untuk memastikan level HANYA bisa naik
+        $levelRank = [
+            'bronze' => 1,
+            'silver' => 2,
+            'gold'   => 3,
+        ];
+
+        $currentRank = $levelRank[$user->loyalty_level] ?? 1;
+        $newRank = $levelRank[$newLevel] ?? 1;
+
+        // Hanya update jika level baru LEBIH TINGGI dari level saat ini
+        if ($newRank > $currentRank) {
             $user->update(['loyalty_level' => $newLevel]);
 
             // Kirim notifikasi naik level
@@ -116,40 +130,52 @@ class PointService
     }
 
     /**
-     * Hitung poin yang dibutuhkan untuk naik ke level berikutnya
+     * Hitung poin yang dibutuhkan untuk naik ke level berikutnya berdasarkan akumulasi poin kualifikasi
      */
     public function getProgressToNextLevel(User $user): array
     {
         $silverThreshold = (int) setting('silver_threshold', 50);
         $goldThreshold = (int) setting('gold_threshold', 150);
-        $currentPoints = $user->points;
+        
+        // Poin kualifikasi adalah akumulasi perolehan poin (tidak berkurang saat tukar reward)
+        $qualificationPoints = max($user->points, $user->total_earned_points_current_period);
 
         if ($user->loyalty_level === 'bronze') {
+            $needed = max(0, $silverThreshold - $qualificationPoints);
             return [
-                'current' => $currentPoints,
+                'current' => $qualificationPoints,
+                'balance' => $user->points,
                 'target' => $silverThreshold,
                 'next_threshold' => $silverThreshold,
-                'needed' => max(0, $silverThreshold - $currentPoints),
-                'points_needed' => max(0, $silverThreshold - $currentPoints),
+                'needed' => $needed,
+                'points_needed' => $needed,
                 'next_level' => 'Silver',
                 'is_max' => false,
-                'percentage' => min(100, round(($currentPoints / $silverThreshold) * 100)),
+                'percentage' => min(100, round(($qualificationPoints / $silverThreshold) * 100)),
             ];
         } elseif ($user->loyalty_level === 'silver') {
+            // Untuk Silver menuju Gold, rentang poin dari silverThreshold ke goldThreshold
+            $needed = max(0, $goldThreshold - $qualificationPoints);
+            $span = max(1, $goldThreshold - $silverThreshold);
+            $progressWithinSpan = max(0, $qualificationPoints - $silverThreshold);
+            $percentage = min(100, round(($progressWithinSpan / $span) * 100));
+
             return [
-                'current' => $currentPoints,
+                'current' => $qualificationPoints,
+                'balance' => $user->points,
                 'target' => $goldThreshold,
                 'next_threshold' => $goldThreshold,
-                'needed' => max(0, $goldThreshold - $currentPoints),
-                'points_needed' => max(0, $goldThreshold - $currentPoints),
+                'needed' => $needed,
+                'points_needed' => $needed,
                 'next_level' => 'Gold',
                 'is_max' => false,
-                'percentage' => min(100, round((($currentPoints - $silverThreshold) / ($goldThreshold - $silverThreshold)) * 100)),
+                'percentage' => $percentage,
             ];
         }
 
         return [
-            'current' => $currentPoints,
+            'current' => $qualificationPoints,
+            'balance' => $user->points,
             'target' => $goldThreshold,
             'next_threshold' => $goldThreshold,
             'needed' => 0,

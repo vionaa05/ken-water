@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import '../../../models/order_model.dart';
 import '../../../services/api_service.dart';
 import '../../../services/storage_service.dart';
 import '../../login_screen.dart';
+import '../admin_main_screen.dart';
 import '../admin_campaigns_screen.dart';
 import '../admin_reports_screen.dart';
 import 'admin_orders_tab.dart';
@@ -22,6 +24,7 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
   Map<String, dynamic>? _summary;
   List<OrderModel> _recentOrders = [];
   bool _isLoading = true;
+  Timer? _pollingTimer;
 
   final currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
@@ -33,6 +36,31 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
   void initState() {
     super.initState();
     _loadDashboard();
+    _startPolling();
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 7), (_) {
+      if (mounted) {
+        _silentReloadDashboard();
+      }
+    });
+  }
+
+  Future<void> _silentReloadDashboard() async {
+    final result = await ApiService.getAdminDashboard();
+    if (mounted && result['success'] == true) {
+      setState(() {
+        _summary = result['summary'];
+        _recentOrders = (result['recent_orders'] as List<OrderModel>?) ?? [];
+      });
+    }
   }
 
   Future<void> _loadDashboard() async {
@@ -581,7 +609,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
   void _showNewTransactionDialog() {
     final customerIdController = TextEditingController();
     final qtyController = TextEditingController(text: '1');
+    final deliveryAddressCtrl = TextEditingController();
     String paymentMethod = 'tunai';
+    String deliveryMethod = 'ambil_sendiri';
     UserModel? foundCustomer;
     bool isSearching = false;
     String? searchError;
@@ -825,6 +855,148 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                       },
                     ),
 
+                    const SizedBox(height: 16),
+                    // ── Metode Pengiriman ──────────────────────────
+                    const Text(
+                      'Metode Pengiriman',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModalState(() {
+                              deliveryMethod = 'ambil_sendiri';
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: deliveryMethod == 'ambil_sendiri'
+                                    ? AppColors.primary
+                                    : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: deliveryMethod == 'ambil_sendiri'
+                                      ? AppColors.primary
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.store_outlined,
+                                    color: deliveryMethod == 'ambil_sendiri'
+                                        ? Colors.white
+                                        : AppColors.textSecondary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Ambil di Depot',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: deliveryMethod == 'ambil_sendiri'
+                                          ? Colors.white
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setModalState(() {
+                              deliveryMethod = 'antar';
+                              if (foundCustomer != null &&
+                                  foundCustomer!.address != null &&
+                                  foundCustomer!.address!.isNotEmpty &&
+                                  deliveryAddressCtrl.text.isEmpty) {
+                                deliveryAddressCtrl.text = foundCustomer!.address!;
+                              }
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: deliveryMethod == 'antar'
+                                    ? AppColors.primary
+                                    : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: deliveryMethod == 'antar'
+                                      ? AppColors.primary
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.delivery_dining,
+                                    color: deliveryMethod == 'antar'
+                                        ? Colors.white
+                                        : AppColors.textSecondary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Diantar',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: deliveryMethod == 'antar'
+                                          ? Colors.white
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    if (deliveryMethod == 'antar') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: deliveryAddressCtrl,
+                        maxLines: 2,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Alamat Pengiriman',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          hintText: 'Masukkan alamat lengkap...',
+                          hintStyle: const TextStyle(color: AppColors.textMuted),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          prefixIcon: const Icon(Icons.location_on_outlined, color: AppColors.textSecondary, size: 20),
+                        ),
+                      ),
+                    ],
+
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () async {
@@ -841,6 +1013,8 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                         }
 
                         final qty = int.tryParse(qtyController.text) ?? 1;
+                        final addressText = deliveryAddressCtrl.text.trim();
+                        final customerName = foundCustomer!.name;
                         Navigator.pop(ctx);
 
                         final targetId = foundCustomer!.customerId.isNotEmpty
@@ -851,18 +1025,75 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                           customerId: targetId,
                           gallonQty: qty,
                           paymentMethod: paymentMethod,
+                          deliveryMethod: deliveryMethod,
+                          deliveryAddress: deliveryMethod == 'antar' ? addressText : null,
                         );
 
                         if (!mounted) return;
                         if (res['success'] == true) {
+                          final orderData = res['order'];
+                          if (orderData != null) {
+                            final nowFormatted = DateFormat('d M Y, H:i').format(DateTime.now());
+                            final newOrder = OrderModel(
+                              id: orderData['id'] ?? DateTime.now().millisecondsSinceEpoch,
+                              orderDate: nowFormatted,
+                              customerName: orderData['customer_name'] ?? customerName,
+                              customerId: foundCustomer!.customerId,
+                              customerPhone: foundCustomer!.phone,
+                              gallonQty: orderData['gallon_qty'] ?? qty,
+                              unitPrice: 5000.0,
+                              totalPrice: (orderData['total_price'] ?? (qty * 5000)).toDouble(),
+                              deliveryMethod: orderData['delivery_method'] ?? deliveryMethod,
+                              deliveryAddress: orderData['delivery_address'] ?? (deliveryMethod == 'antar' ? addressText : null),
+                              paymentMethod: orderData['payment_method'] ?? paymentMethod,
+                              status: 'selesai',
+                              statusLabel: 'Selesai',
+                              statusColor: '#10B981',
+                              source: 'kasir',
+                            );
+
+                            setState(() {
+                              _recentOrders.insert(0, newOrder);
+                              if (_summary != null) {
+                                final currentRev = (_summary!['today_revenue'] ?? 0) as num;
+                                final currentGallons = (_summary!['today_gallons'] ?? 0) as num;
+                                final currentOrders = (_summary!['today_orders'] ?? 0) as num;
+                                _summary!['today_revenue'] = currentRev + newOrder.totalPrice;
+                                _summary!['today_gallons'] = currentGallons + newOrder.gallonQty;
+                                _summary!['today_orders'] = currentOrders + 1;
+                              }
+                            });
+                          }
+
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Transaksi Berhasil! ${res['message']}'),
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_outline, color: Colors.white),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Transaksi Berhasil Dicatat!',
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        Text(
+                                          '$customerName • $qty Galon (${deliveryMethod == 'antar' ? 'Diantar' : 'Ambil di Depot'})',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                               backgroundColor: AppColors.success,
                               behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 4),
                             ),
                           );
-                          _loadDashboard();
                           AdminOrdersTab.globalKey.currentState?.reloadOrders();
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -983,77 +1214,89 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Banner Pendapatan Utama
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF0284C7), Color(0xFF0369A1), Color(0xFF075985)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0284C7).withOpacity(0.35),
-                            blurRadius: 18,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Pendapatan Hari Ini',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(Icons.calendar_today, size: 12, color: Colors.white),
-                                    SizedBox(width: 4),
-                                    Text('Hari Ini', style: TextStyle(color: Colors.white, fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            currencyFormatter.format(_summary?['today_revenue'] ?? 0),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminReportsScreen()),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0284C7), Color(0xFF0369A1), Color(0xFF075985)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              _buildMiniBadge(
-                                Icons.water_drop,
-                                '${_summary?['today_gallons'] ?? 0} Galon Terjual',
-                              ),
-                              const SizedBox(width: 12),
-                              _buildMiniBadge(
-                                Icons.shopping_bag_outlined,
-                                '${_summary?['pending_orders_count'] ?? 0} Pesanan Baru',
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0284C7).withOpacity(0.35),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
                               ),
                             ],
                           ),
-                        ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Pendapatan Hari Ini',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white24,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.calendar_today, size: 12, color: Colors.white),
+                                        SizedBox(width: 4),
+                                        Text('Hari Ini', style: TextStyle(color: Colors.white, fontSize: 11)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                currencyFormatter.format(_summary?['today_revenue'] ?? 0),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Row(
+                                children: [
+                                  _buildMiniBadge(
+                                    Icons.water_drop,
+                                    '${_summary?['today_gallons'] ?? 0} Galon Terjual',
+                                  ),
+                                  const SizedBox(width: 12),
+                                  _buildMiniBadge(
+                                    Icons.shopping_bag_outlined,
+                                    '${_summary?['pending_orders_count'] ?? 0} Pesanan Baru',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
 
@@ -1070,6 +1313,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             icon: Icons.people_alt_rounded,
                             iconColor: const Color(0xFF0284C7),
                             bgColor: const Color(0xFFE0F2FE),
+                            onTap: () {
+                              context.findAncestorStateOfType<AdminMainScreenState>()?.switchTab(2, customerFilter: 'all');
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1077,10 +1323,13 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                           child: _buildMetricCard(
                             title: 'Pelanggan Aktif',
                             value: '${_summary?['active_customers'] ?? 0}',
-                            unit: 'Aktif',
+                            unit: 'Status Aktif',
                             icon: Icons.check_circle_rounded,
                             iconColor: const Color(0xFF10B981),
                             bgColor: const Color(0xFFD1FAE5),
+                            onTap: () {
+                              context.findAncestorStateOfType<AdminMainScreenState>()?.switchTab(2, customerFilter: 'aktif');
+                            },
                           ),
                         ),
                       ],
@@ -1098,6 +1347,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             icon: Icons.person_off_rounded,
                             iconColor: const Color(0xFFEF4444),
                             bgColor: const Color(0xFFFEE2E2),
+                            onTap: () {
+                              context.findAncestorStateOfType<AdminMainScreenState>()?.switchTab(2, customerFilter: 'tidak_aktif');
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1109,6 +1361,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             icon: Icons.workspace_premium_rounded,
                             iconColor: const Color(0xFFF59E0B),
                             bgColor: const Color(0xFFFEF3C7),
+                            onTap: () {
+                              context.findAncestorStateOfType<AdminMainScreenState>()?.switchTab(2, customerFilter: 'loyal');
+                            },
                           ),
                         ),
                       ],
@@ -1126,6 +1381,9 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             icon: Icons.access_time_filled_rounded,
                             iconColor: const Color(0xFF8B5CF6),
                             bgColor: const Color(0xFFEDE9FE),
+                            onTap: () {
+                              context.findAncestorStateOfType<AdminMainScreenState>()?.switchTab(1);
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1137,6 +1395,12 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
                             icon: Icons.water_drop_rounded,
                             iconColor: const Color(0xFF0284C7),
                             bgColor: const Color(0xFFE0F2FE),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AdminReportsScreen()),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -1446,69 +1710,83 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
     required IconData icon,
     required Color iconColor,
     required Color bgColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x06000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, size: 16, color: iconColor),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x06000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 16, color: iconColor),
+                  ),
+                ],
               ),
-              const SizedBox(width: 4),
-              Text(
-                unit,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      unit,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

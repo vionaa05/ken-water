@@ -526,19 +526,26 @@ class ApiService {
     required String customerId,
     required int gallonQty,
     required String paymentMethod,
+    String deliveryMethod = 'ambil_sendiri',
+    String? deliveryAddress,
     String? notes,
   }) async {
     try {
+      final body = <String, dynamic>{
+        'customer_id': customerId,
+        'gallon_qty': gallonQty,
+        'payment_method': paymentMethod,
+        'delivery_method': deliveryMethod,
+        'notes': notes,
+      };
+      if (deliveryMethod == 'antar' && deliveryAddress != null && deliveryAddress.isNotEmpty) {
+        body['delivery_address'] = deliveryAddress;
+      }
       final response = await http
           .post(
             Uri.parse(ApiConstants.adminTransactions),
             headers: _getHeaders(),
-            body: jsonEncode({
-              'customer_id': customerId,
-              'gallon_qty': gallonQty,
-              'payment_method': paymentMethod,
-              'notes': notes,
-            }),
+            body: jsonEncode(body),
           )
           .timeout(const Duration(seconds: 10));
 

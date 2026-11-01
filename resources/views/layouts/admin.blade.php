@@ -99,20 +99,39 @@
                     <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     Dashboard
                 </a>
+
+                <a href="{{ route('admin.kasir.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.kasir.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.kasir.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    Kasir Depot
+                </a>
                 
                 <a href="{{ route('admin.customers.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.customers.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
                     <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.customers.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     Pelanggan
                 </a>
 
-                <a href="{{ route('admin.orders.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.orders.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.orders.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                    Pesanan Masuk
+                <a href="{{ route('admin.orders.index') }}" class="flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.orders.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <div class="flex items-center">
+                        <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.orders.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        Pesanan Masuk
+                    </div>
+                    @if(isset($sidebarPendingOrders) && $sidebarPendingOrders > 0)
+                        <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold leading-none text-white bg-amber-500 rounded-full shadow-sm animate-pulse">
+                            {{ $sidebarPendingOrders }}
+                        </span>
+                    @endif
                 </a>
 
-                <a href="{{ route('admin.complaints.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.complaints.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.complaints.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Keluhan
+                <a href="{{ route('admin.complaints.index') }}" class="flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.complaints.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <div class="flex items-center">
+                        <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.complaints.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Keluhan
+                    </div>
+                    @if(isset($sidebarPendingComplaints) && $sidebarPendingComplaints > 0)
+                        <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-sm animate-pulse">
+                            {{ $sidebarPendingComplaints }}
+                        </span>
+                    @endif
                 </a>
 
                 <div x-data="{ expanded: {{ request()->routeIs('admin.loyalty.*') || request()->routeIs('admin.segmentation.*') || request()->routeIs('admin.campaigns.*') ? 'true' : 'false' }} }" class="mt-4 pt-4 border-t border-white/15">
@@ -121,7 +140,14 @@
                             <svg class="mr-3 h-5 w-5 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
                             CRM & Loyalty
                         </div>
-                        <svg :class="{'rotate-180': expanded}" class="w-4 h-4 transition-transform text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <div class="flex items-center gap-2">
+                            @if(isset($sidebarPendingRedemptions) && $sidebarPendingRedemptions > 0)
+                                <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold leading-none text-white bg-amber-500 rounded-full shadow-sm animate-pulse">
+                                    {{ $sidebarPendingRedemptions }}
+                                </span>
+                            @endif
+                            <svg :class="{'rotate-180': expanded}" class="w-4 h-4 transition-transform text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
                     </button>
                     
                     <div x-show="expanded" class="pl-9 pr-2 py-2 space-y-1" x-collapse>
@@ -129,7 +155,14 @@
                         <a href="{{ route('admin.loyalty.rewards.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.rewards.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Katalog Reward</a>
                         <a href="{{ route('admin.loyalty.vouchers.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.vouchers.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Voucher</a>
                         <a href="{{ route('admin.loyalty.promos.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.promos.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Promo Personal</a>
-                        <a href="{{ route('admin.loyalty.redemptions.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.redemptions.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Validasi Penukaran</a>
+                        <a href="{{ route('admin.loyalty.redemptions.index') }}" class="flex items-center justify-between px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.redemptions.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">
+                            <span>Validasi Penukaran</span>
+                            @if(isset($sidebarPendingRedemptions) && $sidebarPendingRedemptions > 0)
+                                <span class="inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold text-white bg-amber-500 rounded-full">
+                                    {{ $sidebarPendingRedemptions }}
+                                </span>
+                            @endif
+                        </a>
                         <a href="{{ route('admin.campaigns.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.campaigns.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Kampanye WA</a>
                     </div>
                 </div>

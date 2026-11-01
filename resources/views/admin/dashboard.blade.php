@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Dashboard - Ken Water BO')
+@section('title', 'Dashboard - Ken Water')
 
 @section('content')
 
@@ -10,7 +10,7 @@
         <div class="flex items-center gap-2">
             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-100">
                 <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
-                Ken Water Back Office
+                Ken Water 
             </span>
         </div>
         <h1 class="text-2xl font-bold text-gray-900 tracking-tight mt-1">Dashboard</h1>
