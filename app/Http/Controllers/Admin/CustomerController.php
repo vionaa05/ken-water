@@ -37,7 +37,11 @@ class CustomerController extends Controller
 
         // Filter level
         if ($request->filled('level')) {
-            $query->where('loyalty_level', $request->level);
+            if ($request->level === 'loyal') {
+                $query->whereIn('loyalty_level', ['silver', 'gold']);
+            } else {
+                $query->where('loyalty_level', $request->level);
+            }
         }
 
         $customers = $query->orderByDesc('registered_at')->paginate(20)->withQueryString();

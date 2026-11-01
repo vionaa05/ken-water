@@ -84,64 +84,69 @@
 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8">
 
     {{-- Total Pelanggan --}}
-    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+    <a href="{{ route('admin.customers.index') }}" 
+       class="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-sky-300 hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer">
         <div>
-            <p class="text-[11px] font-medium text-gray-400">Total Pelanggan</p>
+            <p class="text-[11px] font-medium text-gray-400 group-hover:text-sky-600 transition-colors">Total Pelanggan</p>
             <p class="text-2xl font-extrabold text-gray-900 mt-0.5">{{ $totalCustomers }}</p>
-            <span class="inline-block mt-1 text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">Semua Member</span>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full group-hover:bg-sky-100 transition-colors">Semua Member &rarr;</span>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-sky-500 group-hover:text-white transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
         </div>
-    </div>
+    </a>
 
     {{-- Pelanggan Aktif --}}
-    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+    <a href="{{ route('admin.customers.index', ['status' => 'aktif']) }}" 
+       class="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer">
         <div>
-            <p class="text-[11px] font-medium text-gray-400">Pelanggan Aktif</p>
+            <p class="text-[11px] font-medium text-gray-400 group-hover:text-emerald-600 transition-colors">Pelanggan Aktif</p>
             <p class="text-2xl font-extrabold text-gray-900 mt-0.5">{{ $activeCustomers }}</p>
-            <span class="inline-block mt-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Status Aktif</span>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full group-hover:bg-emerald-100 transition-colors">Status Aktif &rarr;</span>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-    </div>
+    </a>
 
     {{-- Tidak Aktif --}}
-    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+    <a href="{{ route('admin.customers.index', ['status' => 'tidak_aktif']) }}" 
+       class="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-rose-300 hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer">
         <div>
-            <p class="text-[11px] font-medium text-gray-400">Tidak Aktif</p>
+            <p class="text-[11px] font-medium text-gray-400 group-hover:text-rose-600 transition-colors">Tidak Aktif</p>
             <p class="text-2xl font-extrabold text-rose-600 mt-0.5">{{ $inactiveCustomers }}</p>
-            <span class="inline-block mt-1 text-[10px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Perlu Reaktivasi</span>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full group-hover:bg-rose-100 transition-colors">Perlu Reaktivasi &rarr;</span>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-rose-500 group-hover:text-white transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
         </div>
-    </div>
+    </a>
 
     {{-- Pelanggan Loyal --}}
-    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+    <a href="{{ route('admin.customers.index', ['level' => 'loyal']) }}" 
+       class="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-amber-300 hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer">
         <div>
-            <p class="text-[11px] font-medium text-gray-400">Pelanggan Loyal</p>
+            <p class="text-[11px] font-medium text-gray-400 group-hover:text-amber-600 transition-colors">Pelanggan Loyal</p>
             <p class="text-2xl font-extrabold text-amber-600 mt-0.5">{{ $loyalCustomers }}</p>
-            <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Silver & Gold</span>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full group-hover:bg-amber-100 transition-colors">Silver & Gold &rarr;</span>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
         </div>
-    </div>
+    </a>
 
     {{-- Total Pendapatan Akumulasi --}}
-    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between col-span-2 md:col-span-1">
+    <a href="{{ route('admin.reports.index') }}" 
+       class="group bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-violet-300 hover:-translate-y-0.5 transition-all flex items-center justify-between col-span-2 md:col-span-1 cursor-pointer">
         <div>
-            <p class="text-[11px] font-medium text-gray-400">Total Akumulasi</p>
+            <p class="text-[11px] font-medium text-gray-400 group-hover:text-violet-600 transition-colors">Total Akumulasi</p>
             <p class="text-base font-extrabold text-violet-700 mt-0.5">{{ format_rupiah($totalRevenue) }}</p>
-            <span class="inline-block mt-1 text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">Semua Transaksi</span>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full group-hover:bg-violet-100 transition-colors">Semua Transaksi &rarr;</span>
         </div>
-        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center">
+        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 group-hover:bg-violet-600 group-hover:text-white transition-all">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
-    </div>
+    </a>
 
 </div>
 

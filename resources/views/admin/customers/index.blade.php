@@ -26,6 +26,7 @@
         </select>
         <select name="level" class="input-field sm:w-40">
             <option value="">Semua Level</option>
+            <option value="loyal" {{ request('level') === 'loyal' ? 'selected' : '' }}>Loyal (Silver & Gold)</option>
             <option value="bronze" {{ request('level') === 'bronze' ? 'selected' : '' }}>Bronze</option>
             <option value="silver" {{ request('level') === 'silver' ? 'selected' : '' }}>Silver</option>
             <option value="gold" {{ request('level') === 'gold' ? 'selected' : '' }}>Gold</option>
