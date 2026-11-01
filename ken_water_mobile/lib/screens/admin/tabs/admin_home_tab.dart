@@ -5,6 +5,7 @@ import '../../../constants/app_colors.dart';
 import '../../../models/user_model.dart';
 import '../../../models/order_model.dart';
 import '../../../services/api_service.dart';
+import '../../../services/storage_service.dart';
 import '../../login_screen.dart';
 import '../admin_campaigns_screen.dart';
 import '../admin_reports_screen.dart';
@@ -83,6 +84,297 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         );
       }
     }
+  }
+
+  void _showAdminProfileDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+    );
+
+    final res = await ApiService.getAdminProfile();
+    if (!mounted) return;
+    Navigator.pop(context); // close loader
+
+    final cachedUser = StorageService.getUser();
+    final userData = res['user'] ?? (cachedUser != null ? cachedUser.toJson() : {});
+
+    final nameCtrl = TextEditingController(text: userData['name']?.toString() ?? 'Admin');
+    final phoneCtrl = TextEditingController(text: userData['phone']?.toString() ?? '');
+    final emailText = userData['email']?.toString() ?? '-';
+    final currentPassCtrl = TextEditingController();
+    final newPassCtrl = TextEditingController();
+    final confirmPassCtrl = TextEditingController();
+
+    bool obscureCurrent = true;
+    bool obscureNew = true;
+    bool obscureConfirm = true;
+    bool isSaving = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.admin_panel_settings, color: AppColors.primary, size: 22),
+                            SizedBox(width: 8),
+                            Text(
+                              'Data Akun Admin',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: AppColors.textSecondary),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Info Email (Read-only)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.email_outlined, color: AppColors.textSecondary, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Email Admin', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                Text(emailText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Input Nama
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Admin',
+                        prefixIcon: Icon(Icons.person_outline),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Input Nomor HP / WhatsApp
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor WhatsApp / HP',
+                        hintText: 'Contoh: 081234567890',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    const Divider(color: Color(0xFFE2E8F0)),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Ubah Password (Opsional)',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Password Saat Ini
+                    TextField(
+                      controller: currentPassCtrl,
+                      obscureText: obscureCurrent,
+                      decoration: InputDecoration(
+                        labelText: 'Password Saat Ini',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureCurrent ? Icons.visibility_off : Icons.visibility, color: AppColors.textSecondary, size: 20),
+                          onPressed: () => setModalState(() => obscureCurrent = !obscureCurrent),
+                        ),
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Password Baru
+                    TextField(
+                      controller: newPassCtrl,
+                      obscureText: obscureNew,
+                      decoration: InputDecoration(
+                        labelText: 'Password Baru',
+                        hintText: 'Min. 6 karakter',
+                        prefixIcon: const Icon(Icons.lock_reset),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureNew ? Icons.visibility_off : Icons.visibility, color: AppColors.textSecondary, size: 20),
+                          onPressed: () => setModalState(() => obscureNew = !obscureNew),
+                        ),
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Konfirmasi Password Baru
+                    TextField(
+                      controller: confirmPassCtrl,
+                      obscureText: obscureConfirm,
+                      decoration: InputDecoration(
+                        labelText: 'Konfirmasi Password Baru',
+                        prefixIcon: const Icon(Icons.lock_reset),
+                        suffixIcon: IconButton(
+                          icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, color: AppColors.textSecondary, size: 20),
+                          onPressed: () => setModalState(() => obscureConfirm = !obscureConfirm),
+                        ),
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Tombol Simpan
+                    ElevatedButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                              final name = nameCtrl.text.trim();
+                              final phone = phoneCtrl.text.trim();
+                              final curPass = currentPassCtrl.text;
+                              final newPass = newPassCtrl.text;
+                              final confPass = confirmPassCtrl.text;
+
+                              if (name.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Nama admin wajib diisi!'), backgroundColor: AppColors.error),
+                                );
+                                return;
+                              }
+                              if (phone.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Nomor HP admin wajib diisi!'), backgroundColor: AppColors.error),
+                                );
+                                return;
+                              }
+
+                              if (newPass.isNotEmpty) {
+                                if (curPass.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Masukkan password saat ini untuk ganti password!'), backgroundColor: AppColors.error),
+                                  );
+                                  return;
+                                }
+                                if (newPass.length < 6) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Password baru minimal 6 karakter!'), backgroundColor: AppColors.error),
+                                  );
+                                  return;
+                                }
+                                if (newPass != confPass) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Konfirmasi password baru tidak cocok!'), backgroundColor: AppColors.error),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              setModalState(() => isSaving = true);
+                              final saveRes = await ApiService.updateAdminProfile(
+                                name: name,
+                                phone: phone,
+                                currentPassword: curPass.isNotEmpty ? curPass : null,
+                                password: newPass.isNotEmpty ? newPass : null,
+                                passwordConfirmation: confPass.isNotEmpty ? confPass : null,
+                              );
+                              setModalState(() => isSaving = false);
+
+                              if (!mounted) return;
+                              if (saveRes['success'] == true) {
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(saveRes['message'] ?? 'Data akun admin berhasil diperbarui!'),
+                                    backgroundColor: AppColors.success,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(saveRes['message'] ?? 'Gagal memperbarui data admin'),
+                                    backgroundColor: AppColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isSaving
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Simpan Perubahan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _showSettingsDialog() async {
@@ -613,30 +905,43 @@ class _AdminHomeTabState extends State<AdminHomeTab> {
         surfaceTintColor: Colors.white,
         elevation: 0.5,
         shadowColor: const Color(0x0A000000),
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.water_drop, color: AppColors.primary, size: 18),
-            ),
-            const SizedBox(width: 8),
-            const Flexible(
-              child: Text(
-                'Ken Water Admin',
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                  color: AppColors.textPrimary,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: _showAdminProfileDialog,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.water_drop, color: AppColors.primary, size: 18),
                 ),
-              ),
+                const SizedBox(width: 8),
+                const Flexible(
+                  child: Text(
+                    'Ken Water Admin',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_drop_down,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
           IconButton(

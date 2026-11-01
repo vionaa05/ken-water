@@ -4,100 +4,143 @@
 
 @section('content')
 
-{{-- PAGE HEADER --}}
-<div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+{{-- PAGE HEADER & ACTION --}}
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
-        <p class="text-sm text-gray-500 mt-0.5">Ringkasan performa bisnis Ken Water hari ini.</p>
-    </div>
-    <a href="{{ route('admin.orders.index') }}"
-       class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl shadow-sm hover:bg-primary-dark active:scale-95 transition-all duration-150 self-start sm:self-auto">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        Lihat Pesanan Masuk
-        @if($pendingOrdersCount > 0)
-            <span class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold bg-red-500 text-white rounded-full ring-2 ring-primary">
-                {{ $pendingOrdersCount }}
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                Ken Water Back Office
             </span>
-        @endif
-    </a>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight mt-1">Dashboard</h1>
+        <p class="text-xs text-gray-500 mt-0.5">Monitoring performa depot & ringkasan operasional harian.</p>
+    </div>
+    <div class="flex items-center gap-2.5">
+        <a href="{{ route('admin.orders.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white text-xs font-semibold rounded-xl shadow-sm hover:bg-primary-dark active:scale-95 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Pesanan Masuk
+            @if($pendingOrdersCount > 0)
+                <span class="inline-flex items-center justify-center min-w-[18px] h-4 px-1 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                    {{ $pendingOrdersCount }}
+                </span>
+            @endif
+        </a>
+    </div>
 </div>
 
-{{-- STAT CARDS (1 Baris / 4 Kolom) --}}
-<div class="grid grid-cols-4 gap-4 mb-8">
+{{-- BANNER HERO GRADIENT (Identik Mobile) --}}
+<div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-600 p-6 text-white shadow-lg shadow-sky-500/15 mb-6">
+    <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute right-24 -top-12 w-32 h-32 bg-cyan-300/20 rounded-full blur-xl pointer-events-none"></div>
 
-    {{-- Total Pelanggan --}}
-    <div class="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-400 to-blue-500 rounded-t-2xl"></div>
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 mb-2">Total Pelanggan</p>
-                <p class="text-3xl font-bold text-gray-900">{{ $totalCustomers }}</p>
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-sm text-white border border-white/30">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    Hari Ini, {{ now()->translatedFormat('d F Y') }}
+                </span>
             </div>
-            <div class="w-12 h-12 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500 group-hover:bg-sky-100 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                </svg>
+            <p class="text-xs text-sky-100 font-medium">Pendapatan Hari Ini</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-0.5">{{ format_rupiah($todayRevenue) }}</h2>
+            <div class="flex flex-wrap items-center gap-2.5 mt-3.5">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/15 backdrop-blur-sm text-white">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                    {{ $todayGallons }} Galon Terjual
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/15 backdrop-blur-sm text-white">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    {{ $todayOrdersCount }} Transaksi
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-white/15 backdrop-blur-sm text-white">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {{ $pendingOrdersCount }} Menunggu
+                </span>
             </div>
         </div>
-        <p class="text-xs text-gray-400 mt-3">Semua pelanggan terdaftar</p>
+
+        {{-- Pintasan Cepat --}}
+        <div class="flex items-center gap-2 self-start md:self-auto">
+            <a href="{{ route('admin.campaigns.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-sky-700 hover:bg-sky-50 text-xs font-bold transition-all shadow-sm">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                Kampanye WhatsApp
+            </a>
+            <a href="{{ route('admin.reports.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-sm transition-all border border-white/20">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Laporan
+            </a>
+        </div>
+    </div>
+</div>
+
+{{-- METRIC CARDS GRID (Sesuai Gaya Mobile) --}}
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 mb-8">
+
+    {{-- Total Pelanggan --}}
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-medium text-gray-400">Total Pelanggan</p>
+            <p class="text-2xl font-extrabold text-gray-900 mt-0.5">{{ $totalCustomers }}</p>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">Semua Member</span>
+        </div>
+        <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </div>
     </div>
 
     {{-- Pelanggan Aktif --}}
-    <div class="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-green-500 rounded-t-2xl"></div>
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 mb-2">Pelanggan Aktif</p>
-                <p class="text-3xl font-bold text-gray-900">{{ $activeCustomers }}</p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-100 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-medium text-gray-400">Pelanggan Aktif</p>
+            <p class="text-2xl font-extrabold text-gray-900 mt-0.5">{{ $activeCustomers }}</p>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Status Aktif</span>
         </div>
-        <p class="text-xs text-gray-400 mt-3">Aktif 30 hari terakhir</p>
+        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+    </div>
+
+    {{-- Tidak Aktif --}}
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-medium text-gray-400">Tidak Aktif</p>
+            <p class="text-2xl font-extrabold text-rose-600 mt-0.5">{{ $inactiveCustomers }}</p>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Perlu Reaktivasi</span>
+        </div>
+        <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+        </div>
     </div>
 
     {{-- Pelanggan Loyal --}}
-    <div class="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-t-2xl"></div>
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-xs font-medium text-gray-500 mb-2">Pelanggan Loyal</p>
-                <p class="text-3xl font-bold text-gray-900">{{ $loyalCustomers }}</p>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:bg-amber-100 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                </svg>
-            </div>
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-medium text-gray-400">Pelanggan Loyal</p>
+            <p class="text-2xl font-extrabold text-amber-600 mt-0.5">{{ $loyalCustomers }}</p>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Silver & Gold</span>
         </div>
-        <p class="text-xs text-gray-400 mt-3">Level Gold & Platinum</p>
+        <div class="w-11 h-11 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+        </div>
     </div>
 
-    {{-- Total Pendapatan --}}
-    <div class="group relative bg-white rounded-2xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
-        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-400 to-purple-600 rounded-t-2xl"></div>
-        <div class="flex items-center justify-between">
-            <div class="min-w-0 flex-1 mr-3">
-                <p class="text-xs font-medium text-gray-500 mb-2">Total Pendapatan</p>
-                <p class="text-xl font-bold text-gray-900 leading-snug">{{ format_rupiah($totalRevenue) }}</p>
-            </div>
-            <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-violet-500 group-hover:bg-violet-100 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-            </div>
+    {{-- Total Pendapatan Akumulasi --}}
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between col-span-2 md:col-span-1">
+        <div>
+            <p class="text-[11px] font-medium text-gray-400">Total Akumulasi</p>
+            <p class="text-base font-extrabold text-violet-700 mt-0.5">{{ format_rupiah($totalRevenue) }}</p>
+            <span class="inline-block mt-1 text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">Semua Transaksi</span>
         </div>
-        <p class="text-xs text-gray-400 mt-3">Akumulasi seluruh periode</p>
+        <div class="w-11 h-11 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
     </div>
 
 </div>

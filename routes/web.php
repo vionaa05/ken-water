@@ -106,6 +106,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     // Pengaturan
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::put('/settings/password', [SettingController::class, 'updatePassword'])->name('settings.password');
 
     // Notifikasi - mark as read
     Route::get('/notifications/data', function () {

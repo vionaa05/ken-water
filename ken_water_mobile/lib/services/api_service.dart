@@ -1004,6 +1004,70 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getAdminProfile() async {
+    try {
+      final response = await http
+          .get(Uri.parse(ApiConstants.adminProfile), headers: _getHeaders())
+          .timeout(const Duration(seconds: 10));
+
+      final data = jsonDecode(response.body);
+      return {
+        'success': data['success'] ?? false,
+        'user': data['user'],
+        'message': data['message'] ?? 'Gagal memuat profil',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateAdminProfile({
+    required String name,
+    required String phone,
+    String? currentPassword,
+    String? password,
+    String? passwordConfirmation,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'name': name.trim(),
+        'phone': phone.trim(),
+      };
+      if (currentPassword != null && currentPassword.isNotEmpty) {
+        body['current_password'] = currentPassword;
+      }
+      if (password != null && password.isNotEmpty) {
+        body['password'] = password;
+        body['password_confirmation'] = passwordConfirmation ?? password;
+      }
+
+      final response = await http
+          .put(
+            Uri.parse(ApiConstants.adminProfile),
+            headers: _getHeaders(),
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 12));
+
+      final data = jsonDecode(response.body);
+      if (data['success'] == true && data['user'] != null) {
+        final currentUser = StorageService.getUser();
+        final updatedUser = UserModel.fromJson({
+          ...?currentUser?.toJson(),
+          ...data['user'],
+        });
+        await StorageService.saveUser(updatedUser);
+      }
+      return {
+        'success': data['success'] ?? false,
+        'user': data['user'],
+        'message': data['message'] ?? 'Gagal memperbarui profil',
+      };
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server: $e'};
+    }
+  }
+
   // ==========================================
   // ADMIN VOUCHERS
   // ==========================================

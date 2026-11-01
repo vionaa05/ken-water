@@ -136,9 +136,18 @@ class CustomerController extends Controller
             'phone' => 'required|string|max:20|unique:users,phone,' . $customer->id,
             'address' => 'required|string|max:255',
             'birth_date' => 'nullable|date|before:today',
+            'password' => 'nullable|string|min:6',
+        ], [
+            'password.min' => 'Password minimal 6 karakter.',
         ]);
 
-        $customer->update($request->only('name', 'phone', 'address', 'birth_date'));
+        $data = $request->only('name', 'phone', 'address', 'birth_date');
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $customer->update($data);
 
         return redirect()->route('admin.customers.show', $customer)
             ->with('success', 'Data pelanggan berhasil diperbarui.');

@@ -76,74 +76,74 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased flex h-screen overflow-hidden print:h-auto print:overflow-visible print:bg-white" x-data="{ sidebarOpen: true }">
 
-    <!-- Sidebar -->
-    <aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="fixed inset-y-0 left-0 z-50 w-64 bg-secondary text-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full flex flex-col print:hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-gray-900 border-b border-gray-800">
+    <!-- Sidebar (Warna Gradien Biru Khas Mobile & Kartu Pendapatan) -->
+    <aside :class="{'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen}" class="fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-sky-700 via-sky-600 to-cyan-700 text-white transition-transform duration-300 ease-in-out md:relative md:translate-x-0 h-full flex flex-col shadow-xl print:hidden">
+        <div class="flex items-center justify-between h-16 px-4 bg-sky-800/60 backdrop-blur-md border-b border-white/10">
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 via-sky-500 to-cyan-400 text-white flex items-center justify-center shadow-md shadow-sky-500/25">
-                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                <div class="w-9 h-9 rounded-xl bg-white text-sky-600 flex items-center justify-center shadow-md shadow-sky-950/20">
+                    <svg class="w-5 h-5 text-sky-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                 </div>
                 <div class="flex flex-col">
                     <span class="text-base font-bold text-white tracking-tight leading-tight">Ken Water</span>
-                    <span class="text-[10px] text-sky-400 font-medium tracking-wider uppercase">Admin Portal</span>
+                    <span class="text-[10px] text-sky-200 font-semibold tracking-wider uppercase">Admin Portal</span>
                 </div>
             </a>
-            <button @click="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
+            <button @click="sidebarOpen = false" class="md:hidden text-white/70 hover:text-white">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
         
         <div class="flex-1 overflow-y-auto py-4">
             <nav class="px-2 space-y-1">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.dashboard') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.dashboard') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                     Dashboard
                 </a>
                 
-                <a href="{{ route('admin.customers.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.customers.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <a href="{{ route('admin.customers.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.customers.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.customers.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                     Pelanggan
                 </a>
 
-                <a href="{{ route('admin.orders.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.orders.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                <a href="{{ route('admin.orders.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.orders.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.orders.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                     Pesanan Masuk
                 </a>
 
-                <a href="{{ route('admin.complaints.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.complaints.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                    <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <a href="{{ route('admin.complaints.index') }}" class="flex items-center px-3 py-2.5 text-sm font-semibold rounded-xl transition-all {{ request()->routeIs('admin.complaints.*') ? 'bg-white text-sky-800 shadow-sm' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                    <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.complaints.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     Keluhan
                 </a>
 
-                <div x-data="{ expanded: {{ request()->routeIs('admin.loyalty.*') || request()->routeIs('admin.segmentation.*') || request()->routeIs('admin.campaigns.*') ? 'true' : 'false' }} }" class="mt-4 pt-4 border-t border-gray-800">
-                    <button @click="expanded = !expanded" class="w-full flex items-center justify-between px-2 py-2 text-sm font-medium text-gray-300 rounded-md hover:bg-gray-700 hover:text-white">
+                <div x-data="{ expanded: {{ request()->routeIs('admin.loyalty.*') || request()->routeIs('admin.segmentation.*') || request()->routeIs('admin.campaigns.*') ? 'true' : 'false' }} }" class="mt-4 pt-4 border-t border-white/15">
+                    <button @click="expanded = !expanded" class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-semibold text-sky-100 rounded-xl hover:bg-white/15 hover:text-white transition-all">
                         <div class="flex items-center">
-                            <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                            <svg class="mr-3 h-5 w-5 text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
                             CRM & Loyalty
                         </div>
-                        <svg :class="{'rotate-180': expanded}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        <svg :class="{'rotate-180': expanded}" class="w-4 h-4 transition-transform text-sky-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     
-                    <div x-show="expanded" class="pl-10 pr-2 py-2 space-y-1" x-collapse>
-                        <a href="{{ route('admin.segmentation.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.segmentation.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Segmentasi</a>
-                        <a href="{{ route('admin.loyalty.rewards.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.loyalty.rewards.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Katalog Reward</a>
-                        <a href="{{ route('admin.loyalty.vouchers.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.loyalty.vouchers.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Voucher</a>
-                        <a href="{{ route('admin.loyalty.promos.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.loyalty.promos.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Promo Personal</a>
-                        <a href="{{ route('admin.loyalty.redemptions.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.loyalty.redemptions.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Validasi Penukaran</a>
-                        <a href="{{ route('admin.campaigns.index') }}" class="block px-2 py-2 text-sm rounded-md {{ request()->routeIs('admin.campaigns.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-700' }}">Kampanye WA</a>
+                    <div x-show="expanded" class="pl-9 pr-2 py-2 space-y-1" x-collapse>
+                        <a href="{{ route('admin.segmentation.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.segmentation.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Segmentasi</a>
+                        <a href="{{ route('admin.loyalty.rewards.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.rewards.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Katalog Reward</a>
+                        <a href="{{ route('admin.loyalty.vouchers.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.vouchers.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Voucher</a>
+                        <a href="{{ route('admin.loyalty.promos.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.promos.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Promo Personal</a>
+                        <a href="{{ route('admin.loyalty.redemptions.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.loyalty.redemptions.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Validasi Penukaran</a>
+                        <a href="{{ route('admin.campaigns.index') }}" class="block px-3 py-2 text-xs font-medium rounded-lg transition-all {{ request()->routeIs('admin.campaigns.*') ? 'bg-white/25 text-white font-bold' : 'text-sky-200 hover:text-white hover:bg-white/10' }}">Kampanye WA</a>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-4 border-t border-gray-800">
-                    <a href="{{ route('admin.reports.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.reports.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                        <svg class="mr-3 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div class="mt-4 pt-4 border-t border-white/15">
+                    <a href="{{ route('admin.reports.index') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all {{ request()->routeIs('admin.reports.*') ? 'bg-white text-sky-800 shadow-sm font-semibold' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                        <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.reports.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         Laporan
                     </a>
                 </div>
 
-                <div class="pt-2 border-t border-gray-800">
-                    <a href="{{ route('admin.settings.index') }}" class="flex items-center px-2 py-2 text-sm font-medium rounded-md {{ request()->routeIs('admin.settings.*') ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                        <svg class="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <div class="pt-2 border-t border-white/15">
+                    <a href="{{ route('admin.settings.index') }}" class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all {{ request()->routeIs('admin.settings.*') ? 'bg-white text-sky-800 shadow-sm font-semibold' : 'text-sky-100 hover:bg-white/15 hover:text-white' }}">
+                        <svg class="mr-3 h-5 w-5 flex-shrink-0 {{ request()->routeIs('admin.settings.*') ? 'text-sky-600' : 'text-sky-200' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         Pengaturan
                     </a>
                 </div>

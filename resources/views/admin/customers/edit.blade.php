@@ -31,6 +31,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
                     <textarea name="address" required rows="3" class="input-field">{{ old('address', $customer->address) }}</textarea>
                 </div>
+                <div class="sm:col-span-2 pt-2 border-t border-gray-100">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reset Password Akun Pelanggan (Opsional)</label>
+                    <input type="password" name="password" minlength="6" class="input-field" placeholder="Kosongkan jika tidak ingin mengubah password (min. 6 karakter)">
+                    <p class="text-xs text-gray-500 mt-1">Isi kolom ini jika ingin mereset/mengganti password akun pelanggan.</p>
+                </div>
             </div>
 
             <div class="pt-4 border-t border-gray-100">

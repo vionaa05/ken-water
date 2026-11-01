@@ -888,6 +888,8 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
     final nameCtrl = TextEditingController(text: c['name'] ?? '');
     final phoneCtrl = TextEditingController(text: c['phone'] ?? '');
     final addressCtrl = TextEditingController(text: c['address'] ?? '');
+    final passwordCtrl = TextEditingController();
+    bool obscurePassword = true;
     String status = (c['status'] ?? 'aktif').toString().toLowerCase();
     bool isSaving = false;
 
@@ -989,11 +991,43 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
                         if (val != null) setModalState(() => status = val);
                       },
                     ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: passwordCtrl,
+                      obscureText: obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'Reset Password Akun (Opsional)',
+                        hintText: 'Kosongkan jika tidak diubah (min. 6 karakter)',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            color: AppColors.textSecondary,
+                            size: 20,
+                          ),
+                          onPressed: () => setModalState(() => obscurePassword = !obscurePassword),
+                        ),
+                        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: isSaving
                           ? null
                           : () async {
+                              final newPass = passwordCtrl.text.trim();
+                              if (newPass.isNotEmpty && newPass.length < 6) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Password baru minimal 6 karakter'),
+                                    backgroundColor: AppColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return;
+                              }
+
                               setModalState(() => isSaving = true);
                               final res = await ApiService.adminUpdateCustomer(
                                 id,
@@ -1001,6 +1035,7 @@ class _AdminCustomersTabState extends State<AdminCustomersTab> {
                                 phone: phoneCtrl.text.trim(),
                                 address: addressCtrl.text.trim(),
                                 status: status,
+                                password: newPass.isNotEmpty ? newPass : null,
                               );
                               setModalState(() => isSaving = false);
 

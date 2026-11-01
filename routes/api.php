@@ -87,6 +87,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/settings', [AdminApiController::class, 'settings']);
         Route::post('/settings', [AdminApiController::class, 'updateSettings']);
 
+        // Profil & Keamanan Admin
+        Route::get('/profile', [AdminApiController::class, 'profile']);
+        Route::put('/profile', [AdminApiController::class, 'updateProfile']);
+
         // Voucher & Promo Management
         Route::get('/vouchers', [AdminApiController::class, 'vouchers']);
         Route::post('/vouchers', [AdminApiController::class, 'createVoucher']);

@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Activity Diagram – Admin | Ken Water</title>
+  <style>
+    body { font-family: 'Segoe UI', Arial, sans-serif; background:#f5f5f5; padding:30px; }
+    h2 { text-align:center; color:#1a3a5c; margin-bottom:6px; font-size:20px; }
+    p.sub { text-align:center; color:#666; font-size:12px; margin-bottom:30px; }
+    .diagram-section { margin-bottom:50px; }
+    .diagram-section h3 { text-align:center; font-size:14px; color:#444; margin-bottom:10px; letter-spacing:.5px; }
+    svg { display:block; margin:0 auto; background:#fff; border:1px solid #ccc; box-shadow:2px 2px 8px rgba(0,0,0,.1); }
+  </style>
+</head>
+<body>
+
+<h2>Activity Diagram – Akun Admin</h2>
+<p class="sub">Ken Water &nbsp;|&nbsp; Swimlane: Pengguna (Admin) dan Sistem</p>
+
+<!-- =====================================================================
+     DIAGRAM 1 – LOGIN
+====================================================================== -->
+<div class="diagram-section">
+<h3>1. Login Admin</h3>
+<svg width="560" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- outer border -->
+  <rect x="10" y="10" width="540" height="680" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+
+  <!-- title bar -->
+  <rect x="10" y="10" width="540" height="28" rx="0" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Login</text>
+
+  <!-- column divider -->
+  <line x1="280" y1="38" x2="280" y2="690" stroke="#aaa" stroke-width="1" stroke-dasharray="none"/>
+
+  <!-- column headers -->
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Aplikasi</text>
+
+  <!-- ── User lane ── -->
+
+  <!-- START -->
+  <circle cx="145" cy="105" r="18" fill="#1a5276"/>
+  <!-- Membuka aplikasi -->
+  <line x1="145" y1="123" x2="145" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+  <rect x="75" y="155" width="140" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="174" text-anchor="middle" font-size="12" fill="#1a3a5c">Membuka</text>
+  <text x="145" y="189" text-anchor="middle" font-size="12" fill="#1a3a5c">aplikasi</text>
+
+  <!-- arrow right to Aplikasi (Menampilkan halaman login) -->
+  <line x1="215" y1="177" x2="298" y2="177" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- arrow down from Membuka aplikasi -->
+  <line x1="145" y1="199" x2="145" y2="265" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Mengisi formulir login -->
+  <rect x="68" y="265" width="154" height="52" rx="26" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="285" text-anchor="middle" font-size="12" fill="#1a3a5c">Mengisi formulir</text>
+  <text x="145" y="300" text-anchor="middle" font-size="12" fill="#1a3a5c">login</text>
+
+  <!-- arrow down to decision Submit? -->
+  <line x1="145" y1="317" x2="145" y2="360" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Decision: Submit? -->
+  <polygon points="145,360 195,395 145,430 95,395" fill="#2471a3" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="392" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">Submit?</text>
+
+  <!-- Tidak: arrow right then loop back up -->
+  <line x1="195" y1="395" x2="240" y2="395" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+  <text x="218" y="389" text-anchor="middle" font-size="10" fill="#555">Tidak</text>
+  <!-- loop back: right -> up -> left back to Mengisi formulir -->
+  <line x1="240" y1="395" x2="240" y2="291" stroke="#555" stroke-width="1.5"/>
+  <line x1="240" y1="291" x2="222" y2="291" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Ya: arrow down -->
+  <line x1="145" y1="430" x2="145" y2="460" stroke="#555" stroke-width="1.5"/>
+  <text x="128" y="450" text-anchor="middle" font-size="10" fill="#555">Ya</text>
+  <!-- go right to Aplikasi -->
+  <line x1="145" y1="460" x2="298" y2="460" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- ── Aplikasi lane ── -->
+
+  <!-- Menampilkan halaman login -->
+  <rect x="298" y="155" width="162" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="379" y="174" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="379" y="189" text-anchor="middle" font-size="12" fill="#1a3a5c">halaman login</text>
+
+  <!-- arrow down from halaman login → back left? No, just vertical space -->
+  <!-- loop arrow from Menampilkan halaman login → left back to Mengisi formulir -->
+  <line x1="298" y1="177" x2="298" y2="291" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="291" x2="222" y2="291" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Memeriksa isian formulir -->
+  <line x1="379" y1="460" x2="379" y2="490" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+  <rect x="298" y="490" width="162" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="379" y="509" text-anchor="middle" font-size="12" fill="#1a3a5c">Memeriksa isian</text>
+  <text x="379" y="524" text-anchor="middle" font-size="12" fill="#1a3a5c">formulir</text>
+
+  <!-- Decision: Input Valid? -->
+  <line x1="379" y1="534" x2="379" y2="560" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+  <polygon points="379,560 429,595 379,630 329,595" fill="#2471a3" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="379" y="592" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">Input Valid?</text>
+
+  <!-- Tidak: arrow right then loop back (pesan kesalahan) -->
+  <line x1="429" y1="595" x2="490" y2="595" stroke="#555" stroke-width="1.5"/>
+  <text x="462" y="589" text-anchor="middle" font-size="10" fill="#555">Tidak</text>
+  <line x1="490" y1="595" x2="490" y2="512" stroke="#555" stroke-width="1.5"/>
+  <line x1="490" y1="512" x2="460" y2="512" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Ya: arrow down → Menampilkan halaman dashboard (left, user lane) -->
+  <line x1="379" y1="630" x2="379" y2="650" stroke="#555" stroke-width="1.5"/>
+  <text x="362" y="645" text-anchor="middle" font-size="10" fill="#555">Ya</text>
+  <line x1="379" y1="650" x2="145" y2="650" stroke="#555" stroke-width="1.5" marker-end="url(#arr1)"/>
+
+  <!-- Menampilkan halaman dashboard (spans both lanes, placed in user side bottom) -->
+  <!-- actually place it in user lane -->
+  <rect x="62" y="650" width="166" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="669" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="145" y="684" text-anchor="middle" font-size="12" fill="#1a3a5c">halaman dashboard</text>
+
+  <!-- END - no room, embed it below -->
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 2 – MANAJEMEN PELANGGAN
+====================================================================== -->
+<div class="diagram-section">
+<h3>2. Manajemen Pelanggan</h3>
+<svg width="560" height="820" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="800" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Manajemen Pelanggan</text>
+  <line x1="280" y1="38" x2="280" y2="810" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="105" r="18" fill="#1a5276"/>
+
+  <!-- Memilih menu Pelanggan -->
+  <line x1="145" y1="123" x2="145" y2="155" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="58" y="155" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="174" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="189" text-anchor="middle" font-size="12" fill="#1a3a5c">"Manajemen Pelanggan"</text>
+
+  <!-- → Sistem: Tampilkan daftar -->
+  <line x1="232" y1="177" x2="298" y2="177" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="298" y="155" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="174" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="383" y="189" text-anchor="middle" font-size="12" fill="#1a3a5c">daftar pelanggan</text>
+
+  <!-- ← sistem ke user: decision pilih aksi -->
+  <line x1="298" y1="199" x2="298" y2="250" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="250" x2="195" y2="250" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- Decision: Pilih Aksi -->
+  <polygon points="145,250 210,290 145,330 80,290" fill="#2471a3" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="287" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">Pilih Aksi?</text>
+
+  <!-- Branch 1: Tambah (left going down) -->
+  <line x1="80" y1="290" x2="40" y2="290" stroke="#555" stroke-width="1.5"/>
+  <text x="55" y="284" text-anchor="middle" font-size="10" fill="#555">Tambah</text>
+  <line x1="40" y1="290" x2="40" y2="380" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="10" y="380" width="130" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="75" y="398" text-anchor="middle" font-size="11" fill="#1a3a5c">Mengisi form</text>
+  <text x="75" y="413" text-anchor="middle" font-size="11" fill="#1a3a5c">data pelanggan</text>
+  <!-- Klik Simpan -->
+  <line x1="75" y1="424" x2="75" y2="465" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="10" y="465" width="130" height="36" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="75" y="483" text-anchor="middle" font-size="11" fill="#1a3a5c">Klik "Simpan"</text>
+  <!-- → Sistem simpan -->
+  <line x1="140" y1="483" x2="298" y2="483" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="298" y="462" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="480" text-anchor="middle" font-size="11" fill="#1a3a5c">Menyimpan data</text>
+  <text x="383" y="496" text-anchor="middle" font-size="11" fill="#1a3a5c">pelanggan baru</text>
+
+  <!-- Branch 2: Edit (center-right) -->
+  <line x1="145" y1="330" x2="145" y2="560" stroke="#555" stroke-width="1.5"/>
+  <text x="160" y="350" font-size="10" fill="#555">Edit</text>
+  <line x1="145" y1="560" x2="175" y2="560" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="175" y="538" width="100" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="225" y="556" text-anchor="middle" font-size="11" fill="#1a3a5c">Edit data</text>
+  <text x="225" y="571" text-anchor="middle" font-size="11" fill="#1a3a5c">pelanggan</text>
+  <line x1="275" y1="560" x2="298" y2="560" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="298" y="538" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="556" text-anchor="middle" font-size="11" fill="#1a3a5c">Memperbarui data</text>
+  <text x="383" y="571" text-anchor="middle" font-size="11" fill="#1a3a5c">di database</text>
+
+  <!-- Branch 3: Cetak Kartu (right side down) -->
+  <line x1="210" y1="290" x2="250" y2="290" stroke="#555" stroke-width="1.5"/>
+  <text x="235" y="284" font-size="10" fill="#555">Cetak</text>
+  <line x1="250" y1="290" x2="250" y2="640" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="175" y="640" width="100" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="225" y="657" text-anchor="middle" font-size="11" fill="#1a3a5c">Klik "Print</text>
+  <text x="225" y="672" text-anchor="middle" font-size="11" fill="#1a3a5c">Card"</text>
+  <line x1="275" y1="662" x2="298" y2="662" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+  <rect x="298" y="640" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="657" text-anchor="middle" font-size="11" fill="#1a3a5c">Generate kartu</text>
+  <text x="383" y="672" text-anchor="middle" font-size="11" fill="#1a3a5c">member (PDF)</text>
+
+  <!-- Merge arrows to END -->
+  <line x1="75" y1="501" x2="75" y2="750" stroke="#555" stroke-width="1.5"/>
+  <line x1="225" y1="582" x2="225" y2="750" stroke="#555" stroke-width="1.5"/>
+  <line x1="225" y1="684" x2="225" y2="750" stroke="#555" stroke-width="1.5"/>
+  <line x1="75" y1="750" x2="145" y2="750" stroke="#555" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+  <!-- END -->
+  <circle cx="145" cy="775" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="145" cy="775" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 3 – MANAJEMEN PESANAN
+====================================================================== -->
+<div class="diagram-section">
+<h3>3. Manajemen Pesanan</h3>
+<svg width="560" height="720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="700" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Manajemen Pesanan</text>
+  <line x1="280" y1="38" x2="280" y2="710" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="100" r="18" fill="#1a5276"/>
+
+  <!-- 1. Memilih menu Pesanan -->
+  <line x1="145" y1="118" x2="145" y2="148" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="65" y="148" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">"Pesanan"</text>
+
+  <!-- → Sistem: tampilkan daftar -->
+  <line x1="225" y1="170" x2="298" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="298" y="148" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="383" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">daftar pesanan</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="192" x2="298" y2="235" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="235" x2="225" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- 2. Memilih pesanan -->
+  <rect x="65" y="235" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih pesanan</text>
+  <text x="145" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">yang dikelola</text>
+
+  <!-- → Sistem: tampilkan detail -->
+  <line x1="225" y1="257" x2="298" y2="257" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="298" y="235" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="383" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">detail pesanan</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="279" x2="298" y2="320" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="320" x2="225" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- 3. Memilih status baru -->
+  <rect x="58" y="320" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="338" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih status baru</text>
+  <text x="145" y="353" text-anchor="middle" font-size="12" fill="#1a3a5c">(Diproses / Selesai)</text>
+
+  <!-- 4. Klik Update Status -->
+  <line x1="145" y1="364" x2="145" y2="404" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="65" y="404" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="423" text-anchor="middle" font-size="12" fill="#1a3a5c">Klik "Update</text>
+  <text x="145" y="438" text-anchor="middle" font-size="12" fill="#1a3a5c">Status"</text>
+
+  <!-- → Sistem: update status -->
+  <line x1="225" y1="426" x2="298" y2="426" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="298" y="404" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="420" text-anchor="middle" font-size="12" fill="#1a3a5c">Memperbarui status</text>
+  <text x="383" y="435" text-anchor="middle" font-size="12" fill="#1a3a5c">pesanan di database</text>
+
+  <!-- Sistem: kirim notifikasi -->
+  <line x1="383" y1="448" x2="383" y2="480" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="298" y="480" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="498" text-anchor="middle" font-size="12" fill="#1a3a5c">Mengirim notifikasi</text>
+  <text x="383" y="513" text-anchor="middle" font-size="12" fill="#1a3a5c">ke pelanggan</text>
+
+  <!-- ← konfirmasi ke user -->
+  <line x1="298" y1="502" x2="225" y2="502" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <rect x="65" y="480" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="499" text-anchor="middle" font-size="12" fill="#1a3a5c">Melihat konfirmasi</text>
+  <text x="145" y="514" text-anchor="middle" font-size="12" fill="#1a3a5c">perubahan status</text>
+
+  <!-- END -->
+  <line x1="145" y1="524" x2="145" y2="570" stroke="#555" stroke-width="1.5" marker-end="url(#arr3)"/>
+  <circle cx="145" cy="590" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="145" cy="590" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 4 – KELUHAN PELANGGAN
+====================================================================== -->
+<div class="diagram-section">
+<h3>4. Pengelolaan Keluhan</h3>
+<svg width="560" height="720" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="700" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Pengelolaan Keluhan</text>
+  <line x1="280" y1="38" x2="280" y2="710" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="100" r="18" fill="#1a5276"/>
+
+  <!-- 1. Memilih menu Keluhan -->
+  <line x1="145" y1="118" x2="145" y2="148" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="65" y="148" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">"Keluhan"</text>
+
+  <!-- → Sistem: tampilkan daftar keluhan -->
+  <line x1="225" y1="170" x2="298" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="298" y="148" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan</text>
+  <text x="383" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">daftar keluhan</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="192" x2="298" y2="235" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="235" x2="225" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+  <!-- 2. Memilih keluhan -->
+  <rect x="58" y="235" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih keluhan</text>
+  <text x="145" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">untuk ditindaklanjuti</text>
+
+  <!-- → Sistem: tampilkan detail -->
+  <line x1="232" y1="257" x2="298" y2="257" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="298" y="235" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan detail</text>
+  <text x="383" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">keluhan &amp; riwayat</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="279" x2="298" y2="320" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="320" x2="225" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+  <!-- 3. Menulis balasan -->
+  <rect x="50" y="320" width="190" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="338" text-anchor="middle" font-size="12" fill="#1a3a5c">Menulis balasan &amp;</text>
+  <text x="145" y="353" text-anchor="middle" font-size="12" fill="#1a3a5c">mengubah status keluhan</text>
+
+  <!-- 4. Klik Simpan Respons -->
+  <line x1="145" y1="364" x2="145" y2="404" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="58" y="404" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="423" text-anchor="middle" font-size="12" fill="#1a3a5c">Klik "Simpan</text>
+  <text x="145" y="438" text-anchor="middle" font-size="12" fill="#1a3a5c">Respons"</text>
+
+  <!-- → Sistem: simpan & update -->
+  <line x1="232" y1="426" x2="298" y2="426" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="298" y="404" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="422" text-anchor="middle" font-size="12" fill="#1a3a5c">Menyimpan respons</text>
+  <text x="383" y="437" text-anchor="middle" font-size="12" fill="#1a3a5c">&amp; update status</text>
+
+  <!-- Sistem: kirim notifikasi -->
+  <line x1="383" y1="448" x2="383" y2="480" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="298" y="480" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="498" text-anchor="middle" font-size="12" fill="#1a3a5c">Mengirim notifikasi</text>
+  <text x="383" y="513" text-anchor="middle" font-size="12" fill="#1a3a5c">balasan ke pelanggan</text>
+
+  <!-- END (user lane) -->
+  <line x1="298" y1="502" x2="225" y2="502" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <rect x="65" y="480" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="499" text-anchor="middle" font-size="12" fill="#1a3a5c">Melihat konfirmasi</text>
+  <text x="145" y="514" text-anchor="middle" font-size="12" fill="#1a3a5c">respons terkirim</text>
+
+  <line x1="145" y1="524" x2="145" y2="570" stroke="#555" stroke-width="1.5" marker-end="url(#arr4)"/>
+  <circle cx="145" cy="590" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="145" cy="590" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 5 – PROGRAM LOYALITAS (VALIDASI REDEMPTION)
+====================================================================== -->
+<div class="diagram-section">
+<h3>5. Validasi Redemption Poin</h3>
+<svg width="560" height="760" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="740" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Validasi Redemption Poin</text>
+  <line x1="280" y1="38" x2="280" y2="750" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="100" r="18" fill="#1a5276"/>
+
+  <!-- 1. Memilih menu Loyalitas > Redemption -->
+  <line x1="145" y1="118" x2="145" y2="148" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <rect x="40" y="148" width="210" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">"Loyalitas &gt; Redemption"</text>
+
+  <!-- → Sistem -->
+  <line x1="250" y1="170" x2="298" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <rect x="298" y="148" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan daftar</text>
+  <text x="383" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">permintaan redemption</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="192" x2="298" y2="235" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="235" x2="250" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+
+  <!-- 2. Memilih permintaan -->
+  <rect x="40" y="235" width="210" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih permintaan</text>
+  <text x="145" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">redemption pelanggan</text>
+
+  <!-- Decision: Setujui? -->
+  <line x1="145" y1="279" x2="145" y2="320" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <polygon points="145,320 210,360 145,400 80,360" fill="#2471a3" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="357" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">Setujui?</text>
+
+  <!-- Ya: right → Sistem validasi -->
+  <line x1="210" y1="360" x2="298" y2="360" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <text x="255" y="354" text-anchor="middle" font-size="10" fill="#555">Ya</text>
+  <rect x="298" y="338" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="357" text-anchor="middle" font-size="12" fill="#1a3a5c">Validasi &amp; kurangi</text>
+  <text x="383" y="372" text-anchor="middle" font-size="12" fill="#1a3a5c">poin pelanggan</text>
+
+  <!-- Tidak: down → Sistem batalkan -->
+  <line x1="80" y1="360" x2="40" y2="360" stroke="#555" stroke-width="1.5"/>
+  <text x="55" y="354" text-anchor="middle" font-size="10" fill="#555">Tidak</text>
+  <line x1="40" y1="360" x2="40" y2="480" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <rect x="40" y="480" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="125" y="498" text-anchor="middle" font-size="12" fill="#1a3a5c">Membatalkan</text>
+  <text x="125" y="513" text-anchor="middle" font-size="12" fill="#1a3a5c">redemption</text>
+
+  <!-- Sistem notifikasi setelah Ya -->
+  <line x1="383" y1="382" x2="383" y2="480" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <rect x="298" y="480" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="498" text-anchor="middle" font-size="12" fill="#1a3a5c">Kirim notifikasi</text>
+  <text x="383" y="513" text-anchor="middle" font-size="12" fill="#1a3a5c">ke pelanggan</text>
+
+  <!-- merge and END -->
+  <line x1="210" y1="502" x2="230" y2="502" stroke="#555" stroke-width="1.5"/>
+  <line x1="230" y1="502" x2="230" y2="590" stroke="#555" stroke-width="1.5"/>
+  <line x1="383" y1="524" x2="383" y2="590" stroke="#555" stroke-width="1.5"/>
+  <line x1="145" y1="524" x2="145" y2="590" stroke="#555" stroke-width="1.5"/>
+  <line x1="145" y1="590" x2="230" y2="590" stroke="#555" stroke-width="1.5"/>
+  <line x1="383" y1="590" x2="230" y2="590" stroke="#555" stroke-width="1.5" marker-end="url(#arr5)"/>
+
+  <circle cx="230" cy="620" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="230" cy="620" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 6 – LAPORAN & KAMPANYE CRM
+====================================================================== -->
+<div class="diagram-section">
+<h3>6. Laporan &amp; Kampanye CRM</h3>
+<svg width="560" height="780" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr6" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="760" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Laporan &amp; Kampanye CRM</text>
+  <line x1="280" y1="38" x2="280" y2="770" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="100" r="18" fill="#1a5276"/>
+
+  <!-- 1. Memilih menu Laporan -->
+  <line x1="145" y1="118" x2="145" y2="148" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="58" y="148" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">"Laporan"</text>
+
+  <!-- → Sistem: tampilkan form filter -->
+  <line x1="232" y1="170" x2="298" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="298" y="148" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan form</text>
+  <text x="383" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">filter laporan</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="192" x2="298" y2="235" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="235" x2="232" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+
+  <!-- 2. Menentukan filter -->
+  <rect x="50" y="235" width="190" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Menentukan filter</text>
+  <text x="145" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">(periode / kategori)</text>
+
+  <!-- 3. Klik Tampilkan -->
+  <line x1="145" y1="279" x2="145" y2="312" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="65" y="312" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="330" text-anchor="middle" font-size="12" fill="#1a3a5c">Klik "Tampilkan</text>
+  <text x="145" y="345" text-anchor="middle" font-size="12" fill="#1a3a5c">Laporan"</text>
+
+  <!-- → Sistem: proses query -->
+  <line x1="225" y1="334" x2="298" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="298" y="312" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="330" text-anchor="middle" font-size="12" fill="#1a3a5c">Memproses query</text>
+  <text x="383" y="345" text-anchor="middle" font-size="12" fill="#1a3a5c">data penjualan</text>
+
+  <!-- Sistem: tampilkan grafik -->
+  <line x1="383" y1="356" x2="383" y2="388" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="298" y="388" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="406" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan grafik</text>
+  <text x="383" y="421" text-anchor="middle" font-size="12" fill="#1a3a5c">&amp; tabel ringkasan</text>
+
+  <!-- ← ke user: melihat data -->
+  <line x1="298" y1="410" x2="225" y2="410" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <rect x="65" y="388" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="406" text-anchor="middle" font-size="12" fill="#1a3a5c">Melihat data</text>
+  <text x="145" y="421" text-anchor="middle" font-size="12" fill="#1a3a5c">&amp; grafik laporan</text>
+
+  <!-- Decision: Buat Kampanye? -->
+  <line x1="145" y1="432" x2="145" y2="472" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <polygon points="145,472 210,510 145,548 80,510" fill="#2471a3" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="505" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">Buat Kampanye?</text>
+
+  <!-- Ya: right → sistem -->
+  <line x1="210" y1="510" x2="298" y2="510" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <text x="255" y="504" text-anchor="middle" font-size="10" fill="#555">Ya</text>
+  <rect x="298" y="488" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="506" text-anchor="middle" font-size="12" fill="#1a3a5c">Menyimpan kampanye</text>
+  <text x="383" y="521" text-anchor="middle" font-size="12" fill="#1a3a5c">&amp; kirim notifikasi massal</text>
+
+  <!-- Tidak: down straight to END -->
+  <line x1="145" y1="548" x2="145" y2="650" stroke="#555" stroke-width="1.5"/>
+  <text x="128" y="570" font-size="10" fill="#555">Tidak</text>
+
+  <!-- Ya path joins at 650 -->
+  <line x1="383" y1="532" x2="383" y2="650" stroke="#555" stroke-width="1.5"/>
+  <line x1="383" y1="650" x2="145" y2="650" stroke="#555" stroke-width="1.5" marker-end="url(#arr6)"/>
+
+  <!-- END -->
+  <circle cx="145" cy="680" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="145" cy="680" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+<!-- =====================================================================
+     DIAGRAM 7 – PENGATURAN SISTEM
+====================================================================== -->
+<div class="diagram-section">
+<h3>7. Pengaturan Sistem</h3>
+<svg width="560" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arr7" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="540" height="580" rx="4" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <rect x="10" y="10" width="540" height="28" fill="none" stroke="#aaa" stroke-width="1.5"/>
+  <text x="280" y="29" text-anchor="middle" font-size="13" fill="#333">Pengaturan Sistem</text>
+  <line x1="280" y1="38" x2="280" y2="590" stroke="#aaa" stroke-width="1"/>
+  <rect x="10" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">User</text>
+  <rect x="280" y="38" width="270" height="30" fill="#f0f4fa" stroke="#aaa" stroke-width="1"/>
+  <text x="415" y="58" text-anchor="middle" font-size="13" font-weight="bold" fill="#333">Sistem</text>
+
+  <!-- START -->
+  <circle cx="145" cy="100" r="18" fill="#1a5276"/>
+
+  <!-- 1. Memilih menu Pengaturan -->
+  <line x1="145" y1="118" x2="145" y2="148" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="58" y="148" width="174" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Memilih menu</text>
+  <text x="145" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">"Pengaturan"</text>
+
+  <!-- → Sistem: tampilkan form -->
+  <line x1="232" y1="170" x2="298" y2="170" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="298" y="148" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="167" text-anchor="middle" font-size="12" fill="#1a3a5c">Menampilkan form</text>
+  <text x="383" y="182" text-anchor="middle" font-size="12" fill="#1a3a5c">pengaturan saat ini</text>
+
+  <!-- ← ke user -->
+  <line x1="298" y1="192" x2="298" y2="235" stroke="#555" stroke-width="1.5"/>
+  <line x1="298" y1="235" x2="232" y2="235" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+
+  <!-- 2. Mengubah konfigurasi -->
+  <rect x="40" y="235" width="210" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="254" text-anchor="middle" font-size="12" fill="#1a3a5c">Mengubah konfigurasi</text>
+  <text x="145" y="269" text-anchor="middle" font-size="12" fill="#1a3a5c">(harga, poin, dll.)</text>
+
+  <!-- 3. Klik Simpan -->
+  <line x1="145" y1="279" x2="145" y2="312" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="65" y="312" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="330" text-anchor="middle" font-size="12" fill="#1a3a5c">Klik "Simpan</text>
+  <text x="145" y="345" text-anchor="middle" font-size="12" fill="#1a3a5c">Pengaturan"</text>
+
+  <!-- → Sistem: validasi & simpan -->
+  <line x1="225" y1="334" x2="298" y2="334" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="298" y="312" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="330" text-anchor="middle" font-size="12" fill="#1a3a5c">Memvalidasi &amp;</text>
+  <text x="383" y="345" text-anchor="middle" font-size="12" fill="#1a3a5c">menyimpan konfigurasi</text>
+
+  <!-- Sistem: notifikasi -->
+  <line x1="383" y1="356" x2="383" y2="388" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="298" y="388" width="170" height="44" rx="6" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="383" y="406" text-anchor="middle" font-size="12" fill="#1a3a5c">Tampilkan notifikasi</text>
+  <text x="383" y="421" text-anchor="middle" font-size="12" fill="#1a3a5c">"Pengaturan Disimpan"</text>
+
+  <!-- ← ke user: END -->
+  <line x1="298" y1="410" x2="225" y2="410" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <rect x="65" y="388" width="160" height="44" rx="22" fill="#fff" stroke="#1a5276" stroke-width="1.8"/>
+  <text x="145" y="406" text-anchor="middle" font-size="12" fill="#1a3a5c">Melihat konfirmasi</text>
+  <text x="145" y="421" text-anchor="middle" font-size="12" fill="#1a3a5c">pengaturan tersimpan</text>
+
+  <line x1="145" y1="432" x2="145" y2="475" stroke="#555" stroke-width="1.5" marker-end="url(#arr7)"/>
+  <circle cx="145" cy="496" r="14" fill="none" stroke="#1a5276" stroke-width="3"/>
+  <circle cx="145" cy="496" r="9" fill="#1a5276"/>
+</svg>
+</div>
+
+</body>
+</html>

@@ -21,6 +21,13 @@ class DashboardController extends Controller
         $inactiveCustomers = User::customers()->inactive()->count();
         $loyalCustomers = User::loyalCustomers()->count();
 
+        // Metrik Hari Ini (Identik Mobile)
+        $today = Carbon::today();
+        $todayOrdersQuery = Order::whereDate('order_date', $today)->where('status', 'selesai');
+        $todayRevenue = (float) $todayOrdersQuery->sum('total_price');
+        $todayGallons = (int) $todayOrdersQuery->sum('gallon_qty');
+        $todayOrdersCount = (int) $todayOrdersQuery->count();
+
         // Pendapatan total (semua transaksi, termasuk sebelum reaktivasi)
         $totalRevenue = Order::where('status', 'selesai')->sum('total_price');
 
@@ -94,6 +101,7 @@ class DashboardController extends Controller
 
         return view('admin.dashboard', compact(
             'totalCustomers', 'activeCustomers', 'inactiveCustomers', 'loyalCustomers',
+            'todayRevenue', 'todayGallons', 'todayOrdersCount',
             'totalRevenue', 'pendingOrders', 'pendingOrdersCount', 'openComplaintsCount',
             'chartLabels', 'chartRevenue', 'chartOrders',
             'topCustomers', 'openComplaints'

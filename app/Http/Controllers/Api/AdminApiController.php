@@ -36,7 +36,10 @@ class AdminApiController extends Controller
         $todayCount = (int) $todayOrders->count();
 
         // Pelanggan
-        $totalCustomers = User::where('role', 'pelanggan')->count();
+        $totalCustomers = User::customers()->count();
+        $activeCustomers = User::customers()->active()->count();
+        $inactiveCustomers = User::customers()->inactive()->count();
+        $loyalCustomers = User::loyalCustomers()->count();
         $pendingOrdersCount = Order::where('status', 'dipesan')->count();
 
         // Transaksi terbaru
@@ -70,6 +73,9 @@ class AdminApiController extends Controller
                 'today_gallons' => $todayGallons,
                 'today_orders_count' => $todayCount,
                 'total_customers' => $totalCustomers,
+                'active_customers' => $activeCustomers,
+                'inactive_customers' => $inactiveCustomers,
+                'loyal_customers' => $loyalCustomers,
                 'pending_orders_count' => $pendingOrdersCount,
             ],
             'recent_orders' => $recentOrders,
@@ -916,6 +922,75 @@ class AdminApiController extends Controller
             'success' => true,
             'message' => 'Pengaturan sistem berhasil diperbarui.',
             'settings' => $items,
+        ]);
+    }
+
+    /**
+     * Data Profil Admin
+     */
+    public function profile(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+            ],
+        ]);
+    }
+
+    /**
+     * Update Profil, Nomor HP, dan Password Admin
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:100',
+            'phone' => 'required|string|max:20|unique:users,phone,' . $user->id,
+            'current_password' => 'required_with:password|nullable|current_password',
+            'password' => 'nullable|string|min:6|confirmed',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'phone.required' => 'Nomor HP wajib diisi.',
+            'phone.unique' => 'Nomor HP sudah digunakan akun lain.',
+            'current_password.required_with' => 'Password saat ini harus diisi jika ingin mengganti password.',
+            'current_password.current_password' => 'Password saat ini tidak sesuai.',
+            'password.min' => 'Password baru minimal 6 karakter.',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $user->name = $request->name;
+        $user->phone = preg_replace('/[^0-9]/', '', $request->phone);
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil & keamanan akun admin berhasil diperbarui.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'role' => $user->role,
+            ],
         ]);
     }
 

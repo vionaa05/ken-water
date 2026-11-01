@@ -55,6 +55,7 @@ class ApiConstants {
   static String adminRewardDetail(int id) => '$baseUrl/admin/rewards/$id';
   static String get adminSegmentation => '$baseUrl/admin/segmentation';
   static String get adminSettings => '$baseUrl/admin/settings';
+  static String get adminProfile => '$baseUrl/admin/profile';
   static String get adminVouchers => '$baseUrl/admin/vouchers';
   static String adminAssignVoucher(int id) => '$baseUrl/admin/vouchers/$id/assign';
   static String adminDeleteVoucher(int id) => '$baseUrl/admin/vouchers/$id';

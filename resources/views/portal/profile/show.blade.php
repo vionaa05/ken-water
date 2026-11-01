@@ -20,6 +20,22 @@
         </div>
     @endif
 
+    @if(session('error'))
+        <div class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-medium">
+            <ul class="list-disc pl-4 space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Card Header Pelanggan -->
     <div class="bg-gradient-to-r from-blue-600 to-primary rounded-2xl p-5 text-white shadow-md flex items-center gap-4">
         <div class="w-14 h-14 bg-white/20 text-white rounded-full flex items-center justify-center font-extrabold text-2xl border border-white/30">
